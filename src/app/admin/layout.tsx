@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,15 +13,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </p>
           </div>
           <nav className="flex flex-wrap gap-2 text-sm">
-            <a href="/admin" className="rounded-full border px-3 py-1 hover:bg-accent">
+            <Link href="/admin" className="rounded-full border px-3 py-1 hover:bg-accent">
               Overview
-            </a>
-            <a href="/admin/exams" className="rounded-full border px-3 py-1 hover:bg-accent">
+            </Link>
+            <Link href="/admin/students" className="rounded-full border px-3 py-1 hover:bg-accent">
+              Students
+            </Link>
+            <Link href="/admin/exams" className="rounded-full border px-3 py-1 hover:bg-accent">
               Exams &amp; Questions
-            </a>
-            <a href="/admin/results" className="rounded-full border px-3 py-1 hover:bg-accent">
+            </Link>
+            <Link href="/admin/results" className="rounded-full border px-3 py-1 hover:bg-accent">
               Results
-            </a>
+            </Link>
+            <Link href="/admin/report-cards" className="rounded-full border px-3 py-1 hover:bg-accent">
+              Report Cards
+            </Link>
           </nav>
         </header>
         <main>{children}</main>

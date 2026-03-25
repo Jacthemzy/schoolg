@@ -54,7 +54,7 @@ export function StudentLoginForm({
       return;
     }
 
-    router.push("/");
+    router.push("/dashboard");
   }
 
   return (

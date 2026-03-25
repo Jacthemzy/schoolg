@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -58,20 +59,20 @@ export default function SignupPage() {
       redirect: true,
       dmsNumber: values.dmsNumber,
       password: values.password,
-      callbackUrl: "/",
+      callbackUrl: "/dashboard",
     });
 
-    router.push("/");
+    router.push("/dashboard");
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(22,163,74,0.16),_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eefbf3_45%,#ffffff_100%)] px-4 py-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
           DMS Student Signup
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Register with your DMS Number to access CBT exams.
+        <p className="mt-1 text-sm text-slate-600">
+          Register with your DMS Number, full name, class, and password to access CBT exams.
         </p>
 
         <form
@@ -81,7 +82,7 @@ export default function SignupPage() {
           <div>
             <label className="text-xs font-medium">DMS Number</label>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               placeholder="DMS001"
               {...form.register("dmsNumber")}
             />
@@ -91,7 +92,7 @@ export default function SignupPage() {
           <div>
             <label className="text-xs font-medium">Full Name</label>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               {...form.register("fullName")}
             />
             <Error message={form.formState.errors.fullName?.message} />
@@ -100,7 +101,7 @@ export default function SignupPage() {
           <div>
             <label className="text-xs font-medium">Class</label>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               placeholder="e.g. JSS1, SS2"
               {...form.register("className")}
             />
@@ -111,7 +112,7 @@ export default function SignupPage() {
             <label className="text-xs font-medium">Password</label>
             <input
               type="password"
-              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               {...form.register("password")}
             />
             <Error message={form.formState.errors.password?.message} />
@@ -127,20 +128,17 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={form.formState.isSubmitting}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
           >
             {form.formState.isSubmitting ? "Creating account…" : "Sign up"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        <p className="mt-4 text-center text-xs text-slate-600">
           Already registered?{" "}
-          <a
-            href="/login/student"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link href="/login/student" className="font-medium text-emerald-700 hover:underline">
             Student login
-          </a>
+          </Link>
         </p>
       </div>
     </div>

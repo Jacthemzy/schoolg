@@ -1,0 +1,71 @@
+import { Schema, model, models, type Model, type Types } from "mongoose";
+
+export interface IReportCardSubject {
+  subject: string;
+  classWork: number;
+  examScore: number;
+  total: number;
+  grade: string;
+  remark: string;
+}
+
+export interface IReportCard {
+  _id: Types.ObjectId;
+  studentId: Types.ObjectId;
+  studentName: string;
+  studentDmsNumber?: string;
+  className: string;
+  term: string;
+  sessionLabel: string;
+  attendanceDays?: number;
+  nextTermBegins?: string;
+  subjects: IReportCardSubject[];
+  average: number;
+  teacherComment?: string;
+  principalComment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const ReportCardSubjectSchema = new Schema<IReportCardSubject>(
+  {
+    subject: { type: String, required: true },
+    classWork: { type: Number, required: true, default: 0 },
+    examScore: { type: Number, required: true, default: 0 },
+    total: { type: Number, required: true, default: 0 },
+    grade: { type: String, required: true, default: "F" },
+    remark: { type: String, required: true, default: "Fail" },
+  },
+  { _id: false },
+);
+
+const ReportCardSchema = new Schema<IReportCard>(
+  {
+    studentId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    studentName: { type: String, required: true },
+    studentDmsNumber: { type: String },
+    className: { type: String, required: true },
+    term: { type: String, required: true },
+    sessionLabel: { type: String, required: true },
+    attendanceDays: { type: Number },
+    nextTermBegins: { type: String },
+    subjects: {
+      type: [ReportCardSubjectSchema],
+      default: [],
+    },
+    average: { type: Number, required: true, default: 0 },
+    teacherComment: { type: String },
+    principalComment: { type: String },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+ReportCardSchema.index(
+  { studentId: 1, className: 1, term: 1, sessionLabel: 1 },
+  { unique: true },
+);
+
+export const ReportCard: Model<IReportCard> =
+  models.ReportCard || model<IReportCard>("ReportCard", ReportCardSchema);

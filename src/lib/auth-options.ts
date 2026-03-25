@@ -1,4 +1,5 @@
-import type { NextAuthOptions, User as NextAuthUser, Session, JWT } from "next-auth";
+import type { NextAuthOptions, Session, User as NextAuthUser } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { connectMongoose } from "@/lib/mongoose";
@@ -40,6 +41,9 @@ type AppSession = Session & {
 };
 
 export const authOptions: NextAuthOptions = {
+  pages: {
+    signIn: "/",
+  },
   providers: [
     Credentials({
       id: "student-credentials",
