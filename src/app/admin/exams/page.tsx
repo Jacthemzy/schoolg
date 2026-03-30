@@ -11,7 +11,7 @@ export default function AdminExamsPage() {
   const updateStatus = useUpdateExamStatus();
 
   const form = useForm<CreateExamInput>({
-    resolver: zodResolver(createExamSchema),
+    resolver: zodResolver(createExamSchema) as unknown as ReturnType<typeof zodResolver>,
     defaultValues: {
       title: "",
       description: "",
