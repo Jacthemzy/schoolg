@@ -16,6 +16,18 @@ type ImportQuestion = {
   marks?: number;
 };
 
+type NormalizedQuestion = {
+  questionType: "text" | "image";
+  answerType: "objective" | "theory";
+  questionText: string;
+  questionImageUrl?: string;
+  options: string[];
+  correctAnswer?: number;
+  theoryKeywords: string[];
+  theorySampleAnswer?: string;
+  marks: number;
+};
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ examId: string }> },
@@ -78,7 +90,7 @@ export async function POST(
         marks,
       };
     })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    .filter((item): item is NormalizedQuestion => Boolean(item));
 
   if (!questions.length) {
     return NextResponse.json(
