@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createExamSchema, type CreateExamInput } from "@/lib/admin-schemas";
 import { useAdminExams, useCreateExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
@@ -11,7 +11,7 @@ export default function AdminExamsPage() {
   const updateStatus = useUpdateExamStatus();
 
   const form = useForm<CreateExamInput>({
-    resolver: zodResolver(createExamSchema) as unknown as ReturnType<typeof zodResolver>,
+    resolver: zodResolver(createExamSchema) as Resolver<CreateExamInput>,
     defaultValues: {
       title: "",
       description: "",
