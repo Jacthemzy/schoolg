@@ -52,13 +52,15 @@ export async function POST(
       const marks = Number.isFinite(rawMarks) && rawMarks > 0 ? rawMarks : 1;
       const questionType = questionImageUrl ? "image" : "text";
 
+      const hasValidCorrectAnswer =
+        typeof correctAnswer === "number" &&
+        Number.isInteger(correctAnswer) &&
+        correctAnswer >= 0 &&
+        correctAnswer < options.length;
+
       if (
         (!questionText && !questionImageUrl) ||
-        (answerType === "objective" &&
-          (options.length < 2 ||
-            !Number.isInteger(correctAnswer) ||
-            correctAnswer < 0 ||
-            correctAnswer >= options.length)) ||
+        (answerType === "objective" && (options.length < 2 || !hasValidCorrectAnswer)) ||
         (answerType === "theory" && theoryKeywords.length === 0)
       ) {
         return null;
