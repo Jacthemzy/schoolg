@@ -102,7 +102,7 @@ export async function POST(
   await connectMongoose();
   const existingCount = await Question.countDocuments({ examId });
 
-  const docs = questions.map((question, index) => ({
+  const docs = questions.map((question: NormalizedQuestion, index) => ({
     ...question,
     examId,
     questionNumber: existingCount + index + 1,
