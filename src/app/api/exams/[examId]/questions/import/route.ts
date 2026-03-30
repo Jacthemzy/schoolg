@@ -90,7 +90,7 @@ export async function POST(
         marks,
       };
     })
-    .filter((item): item is NormalizedQuestion => Boolean(item));
+    .filter((item: NormalizedQuestion | null): item is NormalizedQuestion => Boolean(item));
 
   if (!questions.length) {
     return NextResponse.json(
