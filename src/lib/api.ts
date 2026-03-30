@@ -35,3 +35,15 @@ export async function apiDelete<TOutput>(path: string): Promise<TOutput> {
   return handleResponse<TOutput>(res);
 }
 
+export async function apiPatch<TInput, TOutput>(path: string, body: TInput): Promise<TOutput> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    credentials: "include",
+  });
+  return handleResponse<TOutput>(res);
+}
+

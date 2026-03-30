@@ -48,7 +48,10 @@ export async function GET(
     currentQuestion: currentQuestion
       ? {
           id: String(currentQuestion._id),
+          questionType: currentQuestion.questionType,
+          answerType: currentQuestion.answerType,
           questionText: currentQuestion.questionText,
+          questionImageUrl: currentQuestion.questionImageUrl,
           options: currentQuestion.options,
           marks: currentQuestion.marks,
           questionNumber: currentQuestion.questionNumber,

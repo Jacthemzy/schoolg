@@ -5,9 +5,14 @@ import { Question } from "@/models/Question";
 import { requireRole } from "@/lib/server/auth";
 
 type ImportQuestion = {
+  questionType?: string;
+  answerType?: string;
   questionText?: string;
+  questionImageUrl?: string;
   options?: string[];
   correctAnswer?: number;
+  theoryKeywords?: string[];
+  theorySampleAnswer?: string;
   marks?: number;
 };
 
@@ -30,27 +35,44 @@ export async function POST(
   const questions = rawQuestions
     .map((item: ImportQuestion) => {
       const questionText = String(item.questionText ?? "").trim();
+      const questionImageUrl = String(item.questionImageUrl ?? "").trim();
+      const answerType = item.answerType === "theory" ? "theory" : "objective";
       const options = Array.isArray(item.options)
         ? item.options.map((option) => String(option).trim()).filter(Boolean)
         : [];
-      const correctAnswer = Number(item.correctAnswer);
+      const correctAnswer =
+        item.correctAnswer === undefined || item.correctAnswer === null
+          ? undefined
+          : Number(item.correctAnswer);
+      const theoryKeywords = Array.isArray(item.theoryKeywords)
+        ? item.theoryKeywords.map((keyword) => String(keyword).trim()).filter(Boolean)
+        : [];
+      const theorySampleAnswer = String(item.theorySampleAnswer ?? "").trim();
       const rawMarks = Number(item.marks ?? 1);
       const marks = Number.isFinite(rawMarks) && rawMarks > 0 ? rawMarks : 1;
+      const questionType = questionImageUrl ? "image" : "text";
 
       if (
-        !questionText ||
-        options.length < 2 ||
-        !Number.isInteger(correctAnswer) ||
-        correctAnswer < 0 ||
-        correctAnswer >= options.length
+        (!questionText && !questionImageUrl) ||
+        (answerType === "objective" &&
+          (options.length < 2 ||
+            !Number.isInteger(correctAnswer) ||
+            correctAnswer < 0 ||
+            correctAnswer >= options.length)) ||
+        (answerType === "theory" && theoryKeywords.length === 0)
       ) {
         return null;
       }
 
       return {
+        questionType,
+        answerType,
         questionText,
-        options,
-        correctAnswer,
+        questionImageUrl: questionImageUrl || undefined,
+        options: answerType === "objective" ? options : [],
+        correctAnswer: answerType === "objective" ? correctAnswer : undefined,
+        theoryKeywords: answerType === "theory" ? theoryKeywords : [],
+        theorySampleAnswer: answerType === "theory" ? theorySampleAnswer || undefined : undefined,
         marks,
       };
     })
@@ -77,9 +99,14 @@ export async function POST(
   return NextResponse.json(
     inserted.map((question) => ({
       id: String(question._id),
+      questionType: question.questionType,
+      answerType: question.answerType,
       questionText: question.questionText,
+      questionImageUrl: question.questionImageUrl,
       options: question.options,
       correctAnswer: question.correctAnswer,
+      theoryKeywords: question.theoryKeywords,
+      theorySampleAnswer: question.theorySampleAnswer,
       marks: question.marks,
       questionNumber: question.questionNumber,
       createdAt: question.createdAt,

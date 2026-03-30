@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const signupSchema = z.object({
@@ -20,7 +19,6 @@ const signupSchema = z.object({
 type SignupInput = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
-  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverSuccess, setServerSuccess] = useState<string | null>(null);
 
@@ -55,14 +53,19 @@ export default function SignupPage() {
 
     setServerSuccess("Account created. Logging you in…");
 
-    await signIn("student-credentials", {
-      redirect: true,
+    const login = await signIn("student-credentials", {
+      redirect: false,
       dmsNumber: values.dmsNumber,
       password: values.password,
       callbackUrl: "/dashboard",
     });
 
-    router.push("/dashboard");
+    if (!login?.ok || !login.url) {
+      setServerError("Account was created, but auto-login failed. Please sign in manually.");
+      return;
+    }
+
+    window.location.assign(login.url);
   }
 
   return (

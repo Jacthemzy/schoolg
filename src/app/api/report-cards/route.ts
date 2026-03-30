@@ -95,6 +95,9 @@ export async function POST(request: Request) {
   const sessionLabel = String(body.sessionLabel ?? "").trim();
   const attendanceDaysValue = String(body.attendanceDays ?? "").trim();
   const attendanceDays = attendanceDaysValue ? Number(attendanceDaysValue) : undefined;
+  const gender = String(body.gender ?? "").trim();
+  const teacherName = String(body.teacherName ?? "").trim();
+  const resumptionDate = String(body.resumptionDate ?? "").trim();
 
   if (!Types.ObjectId.isValid(studentId) || !className || !term || !sessionLabel) {
     return NextResponse.json(
@@ -139,8 +142,11 @@ export async function POST(request: Request) {
       className,
       term,
       sessionLabel,
+      gender: gender || undefined,
       attendanceDays: Number.isFinite(attendanceDays) ? attendanceDays : undefined,
       nextTermBegins: String(body.nextTermBegins ?? "").trim() || undefined,
+      resumptionDate: resumptionDate || undefined,
+      teacherName: teacherName || undefined,
       subjects,
       average,
       teacherComment: String(body.teacherComment ?? "").trim() || undefined,

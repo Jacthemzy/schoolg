@@ -3,11 +3,12 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createExamSchema, type CreateExamInput } from "@/lib/admin-schemas";
-import { useAdminExams, useCreateExam } from "@/hooks/use-admin-exams";
+import { useAdminExams, useCreateExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
 
 export default function AdminExamsPage() {
   const { data: exams, isLoading } = useAdminExams();
   const createExam = useCreateExam();
+  const updateStatus = useUpdateExamStatus();
 
   const form = useForm<CreateExamInput>({
     resolver: zodResolver(createExamSchema),
@@ -165,6 +166,7 @@ export default function AdminExamsPage() {
                   <th className="py-2 pr-4">Duration</th>
                   <th className="py-2 pr-4">Marks</th>
                   <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">Actions</th>
                   <th className="py-2 pr-4">Questions</th>
                 </tr>
               </thead>
@@ -187,6 +189,18 @@ export default function AdminExamsPage() {
                       >
                         {exam.isActive ? "Active" : "Inactive"}
                       </span>
+                    </td>
+                    <td className="py-2 pr-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateStatus.mutate({ examId: exam.id, isActive: !exam.isActive })
+                        }
+                        disabled={updateStatus.isPending}
+                        className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium hover:bg-accent disabled:opacity-60"
+                      >
+                        {exam.isActive ? "Deactivate" : "Activate"}
+                      </button>
                     </td>
                     <td className="py-2 pr-4">
                       <a

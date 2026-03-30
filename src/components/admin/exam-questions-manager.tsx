@@ -7,16 +7,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { createQuestionSchema, type CreateQuestionInput } from "@/lib/admin-schemas";
 import { useAdminQuestions, useCreateQuestion } from "@/hooks/use-admin-questions";
+import { useAdminExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
 
 type ParsedQuestion = {
+  questionType: "text" | "image";
+  answerType: "objective" | "theory";
   questionText: string;
+  questionImageUrl?: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer?: number;
+  theoryKeywords: string[];
+  theorySampleAnswer?: string;
   marks: number;
 };
 
 export function ExamQuestionsManager({ examId }: { examId: string }) {
   const queryClient = useQueryClient();
+  const { data: exam } = useAdminExam(examId);
+  const updateStatus = useUpdateExamStatus();
   const { data: questions, isLoading } = useAdminQuestions(examId);
   const createQuestion = useCreateQuestion(examId);
   const [bulkText, setBulkText] = useState("");
@@ -27,12 +35,18 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   const form = useForm<CreateQuestionInput>({
     resolver: zodResolver(createQuestionSchema),
     defaultValues: {
+      questionType: "text",
+      answerType: "objective",
       questionText: "",
+      questionImageUrl: "",
       optionA: "",
       optionB: "",
       optionC: "",
       optionD: "",
+      optionE: "",
       correctAnswer: "0",
+      theoryKeywords: "",
+      theorySampleAnswer: "",
       marks: 1,
     },
   });
@@ -40,12 +54,18 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   async function onSubmit(values: CreateQuestionInput) {
     await createQuestion.mutateAsync(values);
     form.reset({
+      questionType: "text",
+      answerType: "objective",
       questionText: "",
+      questionImageUrl: "",
       optionA: "",
       optionB: "",
       optionC: "",
       optionD: "",
+      optionE: "",
       correctAnswer: "0",
+      theoryKeywords: "",
+      theorySampleAnswer: "",
       marks: 1,
     });
   }
@@ -84,6 +104,8 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
     await queryClient.invalidateQueries({ queryKey: ["admin-questions", examId] });
   }
 
+  const answerType = form.watch("answerType");
+
   async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -105,13 +127,89 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
     }
   }
 
+  async function handleQuestionImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await readFileAsDataUrl(file);
+      form.setValue("questionImageUrl", imageUrl, { shouldValidate: true });
+      form.setValue("questionType", "image", { shouldValidate: true });
+    } catch {
+      form.setError("questionImageUrl", {
+        type: "manual",
+        message: "Could not load the selected question image.",
+      });
+    } finally {
+      event.target.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {exam && !exam.isActive ? (
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">This exam is currently inactive.</p>
+              <p className="mt-1 text-sm">
+                Students will not see it until it is activated.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateStatus.mutate({ examId, isActive: true })}
+              disabled={updateStatus.isPending}
+              className="inline-flex items-center rounded-full bg-amber-700 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-70"
+            >
+              Activate Exam
+            </button>
+          </div>
+        </section>
+      ) : null}
       <section className="rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Add Question</h2>
         <form className="mt-4 grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-medium">Question Type</label>
+              <select
+                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                {...form.register("questionType")}
+              >
+                <option value="text">Question Text</option>
+                <option value="image">Question Image</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium">Upload Question Image</label>
+              <label className="mt-1 inline-flex cursor-pointer items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent">
+                Choose image
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleQuestionImageUpload}
+                />
+              </label>
+              <FieldError message={form.formState.errors.questionImageUrl?.message} />
+            </div>
+          </div>
+
           <div>
-            <label className="text-xs font-medium">Question</label>
+            <label className="text-xs font-medium">Answer Style</label>
+            <select
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              {...form.register("answerType")}
+            >
+              <option value="objective">Objective / Multiple Choice</option>
+              <option value="theory">Theory / Written Answer</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium">Question Text</label>
             <textarea
               rows={4}
               className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -120,37 +218,92 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
             <FieldError message={form.formState.errors.questionText?.message} />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Option A" registration={form.register("optionA")} error={form.formState.errors.optionA?.message} />
-            <Input label="Option B" registration={form.register("optionB")} error={form.formState.errors.optionB?.message} />
-            <Input label="Option C" registration={form.register("optionC")} error={form.formState.errors.optionC?.message} />
-            <Input label="Option D" registration={form.register("optionD")} error={form.formState.errors.optionD?.message} />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-medium">Correct Option</label>
-              <select
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                {...form.register("correctAnswer")}
-              >
-                <option value="0">Option A</option>
-                <option value="1">Option B</option>
-                <option value="2">Option C</option>
-                <option value="3">Option D</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium">Marks</label>
-              <input
-                type="number"
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                {...form.register("marks")}
+          {form.watch("questionImageUrl") ? (
+            <div className="rounded-xl border p-4">
+              <p className="text-xs font-medium text-muted-foreground">Question image preview</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={form.watch("questionImageUrl")}
+                alt="Question preview"
+                className="mt-3 max-h-72 w-full rounded-lg object-contain"
               />
-              <FieldError message={form.formState.errors.marks?.message} />
             </div>
-          </div>
+          ) : null}
+
+          {answerType === "objective" ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Input label="Option A" registration={form.register("optionA")} error={form.formState.errors.optionA?.message} />
+                <Input label="Option B" registration={form.register("optionB")} error={form.formState.errors.optionB?.message} />
+                <Input label="Option C" registration={form.register("optionC")} error={form.formState.errors.optionC?.message} />
+                <Input label="Option D" registration={form.register("optionD")} error={form.formState.errors.optionD?.message} />
+                <Input label="Option E" registration={form.register("optionE")} error={form.formState.errors.optionE?.message} />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-medium">Correct Option</label>
+                  <select
+                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    {...form.register("correctAnswer")}
+                  >
+                    <option value="0">Option A</option>
+                    <option value="1">Option B</option>
+                    <option value="2">Option C</option>
+                    <option value="3">Option D</option>
+                    <option value="4">Option E</option>
+                  </select>
+                  <FieldError message={form.formState.errors.correctAnswer?.message} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium">Marks</label>
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    {...form.register("marks")}
+                  />
+                  <FieldError message={form.formState.errors.marks?.message} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-medium">Theory Keywords</label>
+                <textarea
+                  rows={5}
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  placeholder="photosynthesis, sunlight, chlorophyll"
+                  {...form.register("theoryKeywords")}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Separate keywords with commas or new lines. The auto-marker matches these words in the student's answer.
+                </p>
+                <FieldError message={form.formState.errors.theoryKeywords?.message} />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium">Sample Answer</label>
+                <textarea
+                  rows={5}
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  placeholder="A strong model answer for review after submission."
+                  {...form.register("theorySampleAnswer")}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium">Marks</label>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  {...form.register("marks")}
+                />
+                <FieldError message={form.formState.errors.marks?.message} />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -179,7 +332,7 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
               />
             </label>
             <span className="text-xs text-muted-foreground">
-              Format example: question line, options `A.` to `D.`, then `ANSWER: B`, `MARKS: 2`.
+              Format example: objective question with options and `ANSWER: B`, or theory question with `TYPE: THEORY`, `KEYWORDS: ...`, `SAMPLE ANSWER: ...`.
             </span>
           </div>
           <textarea
@@ -192,8 +345,15 @@ A. 3
 B. 4
 C. 5
 D. 6
+E. 7
 ANSWER: B
-MARKS: 2`}
+MARKS: 2
+
+2. Explain photosynthesis.
+TYPE: THEORY
+KEYWORDS: sunlight, chlorophyll, carbon dioxide, water, glucose, oxygen
+SAMPLE ANSWER: Plants use sunlight and chlorophyll to convert water and carbon dioxide into glucose and oxygen.
+MARKS: 5`}
           />
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -217,17 +377,36 @@ MARKS: 2`}
                 {parsedQuestions.slice(0, 5).map((question, index) => (
                   <article key={`${question.questionText}-${index}`} className="rounded-lg border p-3">
                     <p className="text-xs text-muted-foreground">
-                      Question {index + 1} • {question.marks} mark(s)
+                      Question {index + 1} • {question.answerType} • {question.marks} mark(s)
                     </p>
-                    <p className="mt-1 font-medium">{question.questionText}</p>
-                    <ul className="mt-2 grid gap-1 text-sm text-muted-foreground">
-                      {question.options.map((option, optionIndex) => (
-                        <li key={`${option}-${optionIndex}`}>
-                          {String.fromCharCode(65 + optionIndex)}. {option}
-                          {question.correctAnswer === optionIndex ? " (answer)" : ""}
-                        </li>
-                      ))}
-                    </ul>
+                    <p className="mt-1 font-medium">
+                      {question.questionText || "Question imported as image-based prompt."}
+                    </p>
+                    {question.questionImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={question.questionImageUrl}
+                        alt={`Question ${index + 1}`}
+                        className="mt-3 max-h-56 w-full rounded-lg object-contain"
+                      />
+                    ) : null}
+                    {question.answerType === "objective" ? (
+                      <ul className="mt-2 grid gap-1 text-sm text-muted-foreground">
+                        {question.options.map((option, optionIndex) => (
+                          <li key={`${option}-${optionIndex}`}>
+                            {String.fromCharCode(65 + optionIndex)}. {option}
+                            {question.correctAnswer === optionIndex ? " (answer)" : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+                        <p>Keywords: {question.theoryKeywords.join(", ")}</p>
+                        {question.theorySampleAnswer ? (
+                          <p>Sample answer: {question.theorySampleAnswer}</p>
+                        ) : null}
+                      </div>
+                    )}
                   </article>
                 ))}
               </div>
@@ -251,26 +430,45 @@ MARKS: 2`}
                     <p className="text-xs font-medium text-muted-foreground">
                       Question {question.questionNumber}
                     </p>
-                    <h3 className="mt-1 font-medium">{question.questionText}</h3>
+                    <h3 className="mt-1 font-medium">
+                      {question.questionText || "Image-based question"}
+                    </h3>
+                    {question.questionType === "image" && question.questionImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={question.questionImageUrl}
+                        alt={`Question ${question.questionNumber}`}
+                        className="mt-3 max-h-72 w-full rounded-lg object-contain"
+                      />
+                    ) : null}
                   </div>
                   <span className="rounded-full bg-muted px-3 py-1 text-xs">
-                    {question.marks} mark(s)
+                    {question.answerType} • {question.marks} mark(s)
                   </span>
                 </div>
-                <ul className="mt-4 grid gap-2 text-sm text-muted-foreground">
-                  {question.options.map((option, index) => (
-                    <li
-                      key={`${question.id}-${option}`}
-                      className={`rounded-lg border px-3 py-2 ${
-                        question.correctAnswer === index
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                          : ""
-                      }`}
-                    >
-                      {String.fromCharCode(65 + index)}. {option}
-                    </li>
-                  ))}
-                </ul>
+                {question.answerType === "objective" ? (
+                  <ul className="mt-4 grid gap-2 text-sm text-muted-foreground">
+                    {question.options.map((option, index) => (
+                      <li
+                        key={`${question.id}-${option}`}
+                        className={`rounded-lg border px-3 py-2 ${
+                          question.correctAnswer === index
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                            : ""
+                        }`}
+                      >
+                        {String.fromCharCode(65 + index)}. {option}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                    <p>Keywords: {question.theoryKeywords.join(", ")}</p>
+                    {question.theorySampleAnswer ? (
+                      <p>Sample answer: {question.theorySampleAnswer}</p>
+                    ) : null}
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -344,14 +542,22 @@ function parseQuestionBlock(block: string): ParsedQuestion | null {
 
   const options: string[] = [];
   let questionText = "";
-  let correctAnswer = 0;
+  let answerType: "objective" | "theory" = "objective";
+  let correctAnswer: number | undefined = 0;
+  let theoryKeywords: string[] = [];
+  let theorySampleAnswer = "";
   let marks = 1;
 
   for (const line of lines) {
+    if (/^type\s*:/i.test(line)) {
+      answerType = /theory/i.test(line) ? "theory" : "objective";
+      continue;
+    }
+
     if (/^(answer|ans)\s*:/i.test(line)) {
-      const match = line.match(/([A-D])/i);
+      const match = line.match(/([A-E])/i);
       if (match) {
-        correctAnswer = "ABCD".indexOf(match[1].toUpperCase());
+        correctAnswer = "ABCDE".indexOf(match[1].toUpperCase());
       }
       continue;
     }
@@ -364,7 +570,21 @@ function parseQuestionBlock(block: string): ParsedQuestion | null {
       continue;
     }
 
-    const optionMatch = line.match(/^[A-D][\.\):\-]\s*(.+)$/i);
+    if (/^keywords?\s*:/i.test(line)) {
+      theoryKeywords = line
+        .replace(/^keywords?\s*:/i, "")
+        .split(/[;,]+/)
+        .map((keyword) => keyword.trim())
+        .filter(Boolean);
+      continue;
+    }
+
+    if (/^sample answer\s*:/i.test(line)) {
+      theorySampleAnswer = line.replace(/^sample answer\s*:/i, "").trim();
+      continue;
+    }
+
+    const optionMatch = line.match(/^[A-E][\.\):\-]\s*(.+)$/i);
     if (optionMatch) {
       options.push(optionMatch[1].trim());
       continue;
@@ -376,9 +596,12 @@ function parseQuestionBlock(block: string): ParsedQuestion | null {
   }
 
   return normalizeImportedQuestion({
+    answerType,
     questionText,
     options,
     correctAnswer,
+    theoryKeywords,
+    theorySampleAnswer,
     marks,
   });
 }
@@ -387,27 +610,43 @@ function normalizeImportedQuestion(
   item: Record<string, unknown>,
 ): ParsedQuestion | null {
   const questionText = String(item.questionText ?? "").trim();
+  const questionImageUrl = String(item.questionImageUrl ?? "").trim();
+  const answerType = item.answerType === "theory" ? "theory" : "objective";
   const options = Array.isArray(item.options)
     ? item.options.map((option) => String(option).trim()).filter(Boolean)
     : [];
-  const correctAnswer = Number(item.correctAnswer ?? 0);
+  const correctAnswer =
+    item.correctAnswer === undefined || item.correctAnswer === null
+      ? undefined
+      : Number(item.correctAnswer);
+  const theoryKeywords = Array.isArray(item.theoryKeywords)
+    ? item.theoryKeywords.map((keyword) => String(keyword).trim()).filter(Boolean)
+    : [];
+  const theorySampleAnswer = String(item.theorySampleAnswer ?? "").trim();
   const rawMarks = Number(item.marks ?? 1);
   const marks = Number.isFinite(rawMarks) && rawMarks > 0 ? rawMarks : 1;
 
   if (
-    !questionText ||
-    options.length < 2 ||
-    !Number.isInteger(correctAnswer) ||
-    correctAnswer < 0 ||
-    correctAnswer >= options.length
+    (!questionText && !questionImageUrl) ||
+    (answerType === "objective" &&
+      (options.length < 2 ||
+        !Number.isInteger(correctAnswer) ||
+        correctAnswer < 0 ||
+        correctAnswer >= options.length)) ||
+    (answerType === "theory" && theoryKeywords.length === 0)
   ) {
     return null;
   }
 
   return {
+    questionType: questionImageUrl ? "image" : "text",
+    answerType,
     questionText,
-    options,
+    questionImageUrl: questionImageUrl || undefined,
+    options: answerType === "objective" ? options : [],
     correctAnswer,
+    theoryKeywords,
+    theorySampleAnswer: theorySampleAnswer || undefined,
     marks,
   };
 }
@@ -433,4 +672,20 @@ async function extractTextFromImage(file: File) {
   } finally {
     bitmap.close();
   }
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Invalid image data."));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
 }

@@ -2,9 +2,55 @@ import bcrypt from "bcrypt";
 import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
 import { Exam } from "@/models/Exam";
-import { Question } from "@/models/Question";
+import { Question, type IQuestion } from "@/models/Question";
 import { Result } from "@/models/Result";
 import { User } from "@/models/User";
+
+function normalizeKeyword(value: string) {
+  return value.trim().toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function scoreTheoryAnswer(
+  question: Pick<IQuestion, "marks" | "theoryKeywords">,
+  answerText: string,
+) {
+  const normalizedAnswer = normalizeKeyword(answerText);
+  const expectedKeywords = question.theoryKeywords
+    .map((keyword) => normalizeKeyword(keyword))
+    .filter(Boolean);
+  const matchedKeywords = expectedKeywords.filter((keyword) => {
+    if (!keyword) return false;
+    return normalizedAnswer.includes(keyword);
+  });
+  const uniqueExpected = [...new Set(expectedKeywords)];
+  const uniqueMatched = [...new Set(matchedKeywords)];
+  const ratio = uniqueExpected.length ? uniqueMatched.length / uniqueExpected.length : 0;
+  const scoreAwarded = Math.round(question.marks * ratio * 100) / 100;
+
+  return {
+    isCorrect: uniqueExpected.length > 0 && uniqueMatched.length === uniqueExpected.length,
+    scoreAwarded,
+    matchedKeywords: uniqueMatched,
+    expectedKeywords: uniqueExpected,
+  };
+}
+
+export function scoreQuestionAnswer(
+  question: Pick<IQuestion, "answerType" | "correctAnswer" | "marks" | "theoryKeywords">,
+  payload: { selectedOption?: number; answerText?: string },
+) {
+  if (question.answerType === "theory") {
+    return scoreTheoryAnswer(question, payload.answerText ?? "");
+  }
+
+  const isCorrect = payload.selectedOption === question.correctAnswer;
+  return {
+    isCorrect,
+    scoreAwarded: isCorrect ? question.marks : 0,
+    matchedKeywords: [],
+    expectedKeywords: [],
+  };
+}
 
 export async function getStudentBySessionId(studentId: string) {
   await connectMongoose();
@@ -105,7 +151,19 @@ export async function finalizeAttempt(studentId: string, examId: string) {
 
   const score = questions.reduce((total, question) => {
     const record = answerMap.get(String(question._id));
-    return total + (record?.isCorrect ? question.marks : 0);
+    if (!record) {
+      return total;
+    }
+
+    const scored = scoreQuestionAnswer(question, {
+      selectedOption: record.selectedOption,
+      answerText: record.answerText,
+    });
+    record.isCorrect = scored.isCorrect;
+    record.scoreAwarded = scored.scoreAwarded;
+    record.matchedKeywords = scored.matchedKeywords;
+    record.expectedKeywords = scored.expectedKeywords;
+    return total + scored.scoreAwarded;
   }, 0);
 
   attempt.score = score;

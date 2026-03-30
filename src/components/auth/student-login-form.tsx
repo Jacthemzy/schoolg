@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormError } from "@/components/auth/form-error";
 
@@ -29,7 +28,6 @@ export function StudentLoginForm({
   description = "Enter your DMS Number and password to continue to your exam portal.",
   showAdminLink = true,
 }: StudentLoginFormProps) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<StudentLoginInput>({
@@ -43,18 +41,28 @@ export function StudentLoginForm({
   async function onSubmit(values: StudentLoginInput) {
     setError(null);
 
-    const res = await signIn("student-credentials", {
-      redirect: false,
-      dmsNumber: values.dmsNumber,
-      password: values.password,
-    });
+    try {
+      const res = await signIn("student-credentials", {
+        redirect: false,
+        callbackUrl: "/dashboard",
+        dmsNumber: values.dmsNumber,
+        password: values.password,
+      });
 
-    if (res?.error) {
-      setError("Invalid DMS Number or password.");
-      return;
+      if (res?.error) {
+        setError("Invalid DMS Number or password.");
+        return;
+      }
+
+      if (!res?.ok || !res.url) {
+        setError("Login could not be completed. Please try again.");
+        return;
+      }
+
+      window.location.assign(res.url);
+    } catch {
+      setError("Login could not be completed. Please try again.");
     }
-
-    router.push("/dashboard");
   }
 
   return (

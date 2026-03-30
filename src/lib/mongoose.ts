@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ensureDefaultAdmin } from "@/lib/server/ensure-default-admin";
 
 interface GlobalMongoose {
   conn: typeof mongoose | null;
@@ -26,16 +27,25 @@ export async function connectMongoose() {
   }
 
   if (cached.conn) {
+    await ensureDefaultAdmin();
     return cached.conn;
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(mongoUri, {
-      dbName: process.env.MONGODB_DB || "school",
-    });
+    cached.promise = mongoose
+      .connect(mongoUri, {
+        dbName: process.env.MONGODB_DB || "school",
+        serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 20000,
+      })
+      .catch((error) => {
+        cached.promise = null;
+        throw error;
+      });
   }
 
   cached.conn = await cached.promise;
   globalWithMongoose._mongoose = cached;
+  await ensureDefaultAdmin();
   return cached.conn;
 }

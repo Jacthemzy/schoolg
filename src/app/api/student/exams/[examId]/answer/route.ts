@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { Question } from "@/models/Question";
 import { Result } from "@/models/Result";
 import { connectMongoose } from "@/lib/mongoose";
-import { finalizeAttempt, getAttemptSession } from "@/lib/server/exam-session";
+import {
+  finalizeAttempt,
+  getAttemptSession,
+  scoreQuestionAnswer,
+} from "@/lib/server/exam-session";
 import { requireRole } from "@/lib/server/auth";
 
 export async function POST(
@@ -14,7 +18,11 @@ export async function POST(
 
   const { examId } = await context.params;
   const body = await request.json();
-  const selectedOption = Number(body.selectedOption);
+  const selectedOption =
+    body.selectedOption === undefined || body.selectedOption === null
+      ? undefined
+      : Number(body.selectedOption);
+  const answerText = String(body.answerText ?? "").trim();
 
   const sessionState = await getAttemptSession(auth.session.user!.id!, examId);
   if (!sessionState) {
@@ -30,8 +38,19 @@ export async function POST(
 
   const question = sessionState.currentQuestion;
 
-  if (!Number.isInteger(selectedOption) || selectedOption < 0 || selectedOption >= question.options.length) {
-    return NextResponse.json({ error: "Select a valid option." }, { status: 400 });
+  if (question.answerType === "objective") {
+    if (
+      !Number.isInteger(selectedOption) ||
+      selectedOption < 0 ||
+      selectedOption >= question.options.length
+    ) {
+      return NextResponse.json({ error: "Select a valid option." }, { status: 400 });
+    }
+  } else if (!answerText) {
+    return NextResponse.json(
+      { error: "Enter your theory answer before moving to the next question." },
+      { status: 400 },
+    );
   }
 
   await connectMongoose();
@@ -52,10 +71,16 @@ export async function POST(
     );
   }
 
+  const scored = scoreQuestionAnswer(question, { selectedOption, answerText });
+
   attempt.answers.push({
     questionId: question._id,
     selectedOption,
-    isCorrect: selectedOption === question.correctAnswer,
+    answerText: question.answerType === "theory" ? answerText : undefined,
+    isCorrect: scored.isCorrect,
+    scoreAwarded: scored.scoreAwarded,
+    matchedKeywords: scored.matchedKeywords,
+    expectedKeywords: scored.expectedKeywords,
   });
   attempt.currentQuestionNumber = question.questionNumber + 1;
   await attempt.save();

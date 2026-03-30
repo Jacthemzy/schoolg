@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { StudentSignOutButton } from "@/components/auth/student-sign-out-button";
 import { connectMongoose } from "@/lib/mongoose";
 import { getAppSession } from "@/lib/server/auth";
 import { Exam } from "@/models/Exam";
@@ -27,15 +28,23 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#effcf5_45%,#ffffff_100%)]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-            Student Dashboard
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-950">
-            Welcome, {session.user.name}
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            DMS Number: {session.user.dmsNumber} • Class: {session.user.className}
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                Student Dashboard
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-950">
+                Welcome, {session.user.name}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                DMS Number: {session.user.dmsNumber} • Class: {session.user.className}
+              </p>
+              <p className="mt-3 text-sm text-slate-500">
+                Using a shared device? Sign out here before another student signs in or creates an account.
+              </p>
+            </div>
+            <StudentSignOutButton />
+          </div>
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">

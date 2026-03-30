@@ -14,11 +14,14 @@ export interface IReportCard {
   studentId: Types.ObjectId;
   studentName: string;
   studentDmsNumber?: string;
+  gender?: string;
   className: string;
   term: string;
   sessionLabel: string;
   attendanceDays?: number;
   nextTermBegins?: string;
+  resumptionDate?: string;
+  teacherName?: string;
   subjects: IReportCardSubject[];
   average: number;
   teacherComment?: string;
@@ -44,11 +47,14 @@ const ReportCardSchema = new Schema<IReportCard>(
     studentId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     studentName: { type: String, required: true },
     studentDmsNumber: { type: String },
+    gender: { type: String },
     className: { type: String, required: true },
     term: { type: String, required: true },
     sessionLabel: { type: String, required: true },
     attendanceDays: { type: Number },
     nextTermBegins: { type: String },
+    resumptionDate: { type: String },
+    teacherName: { type: String },
     subjects: {
       type: [ReportCardSubjectSchema],
       default: [],

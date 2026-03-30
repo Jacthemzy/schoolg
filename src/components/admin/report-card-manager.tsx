@@ -43,6 +43,9 @@ export function ReportCardManager() {
   const [sessionLabel, setSessionLabel] = useState("2025/2026");
   const [attendanceDays, setAttendanceDays] = useState("");
   const [nextTermBegins, setNextTermBegins] = useState("");
+  const [resumptionDate, setResumptionDate] = useState("");
+  const [gender, setGender] = useState("");
+  const [teacherName, setTeacherName] = useState("");
   const [teacherComment, setTeacherComment] = useState("");
   const [principalComment, setPrincipalComment] = useState("");
   const [rows, setRows] = useState<ReportCardRow[]>([emptyRow(), emptyRow(), emptyRow()]);
@@ -128,11 +131,16 @@ export function ReportCardManager() {
         sessionLabel,
         attendanceDays,
         nextTermBegins,
+        resumptionDate,
+        gender,
+        teacherName,
         subjects: cleanRows,
         teacherComment,
         principalComment,
       });
 
+      setGender(saved.gender);
+      setTeacherName(saved.teacherName);
       setTeacherComment(saved.teacherComment);
       setPrincipalComment(saved.principalComment);
       setFormMessage("Report card saved successfully.");
@@ -222,6 +230,36 @@ export function ReportCardManager() {
               value={nextTermBegins}
               onChange={(event) => setNextTermBegins(event.target.value)}
               placeholder="15/09/2026"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium">Resumption Date</label>
+            <input
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              value={resumptionDate}
+              onChange={(event) => setResumptionDate(event.target.value)}
+              placeholder="20/09/2026"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium">Gender</label>
+            <select
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              value={gender}
+              onChange={(event) => setGender(event.target.value)}
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium">Teacher Name</label>
+            <input
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              value={teacherName}
+              onChange={(event) => setTeacherName(event.target.value)}
+              placeholder="Mrs. John"
             />
           </div>
           <div className="flex items-end">

@@ -1,26 +1,31 @@
-import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default withAuth({
-  callbacks: {
-    authorized: ({ token, req }) => {
-      const path = req.nextUrl.pathname;
+export default async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const { pathname } = request.nextUrl;
 
-      if (!token) {
-        return false;
-      }
+  if (pathname.startsWith("/admin")) {
+    if (!token || token.role !== "admin") {
+      return NextResponse.redirect(new URL("/login/admin", request.url));
+    }
 
-      if (path.startsWith("/admin")) {
-        return token.role === "admin";
-      }
+    return NextResponse.next();
+  }
 
-      if (path.startsWith("/dashboard") || path.startsWith("/exam") || path.startsWith("/results")) {
-        return token.role === "student" || token.role === "admin";
-      }
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/exam") ||
+    pathname.startsWith("/results")
+  ) {
+    if (!token || (token.role !== "student" && token.role !== "admin")) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
 
-      return true;
-    },
-  },
-});
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/dashboard/:path*", "/admin/:path*", "/exam/:path*", "/results/:path*"],

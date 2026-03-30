@@ -53,25 +53,30 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<AppUser | null> {
-        if (!credentials?.dmsNumber || !credentials?.password) return null;
+        try {
+          if (!credentials?.dmsNumber || !credentials?.password) return null;
 
-        await connectMongoose();
-        const user = await User.findOne({
-          dmsNumber: credentials.dmsNumber,
-          role: "student",
-        });
-        if (!user) return null;
+          await connectMongoose();
+          const user = await User.findOne({
+            dmsNumber: credentials.dmsNumber,
+            role: "student",
+          });
+          if (!user) return null;
 
-        const ok = await bcrypt.compare(credentials.password, user.password);
-        if (!ok) return null;
+          const ok = await bcrypt.compare(credentials.password, user.password);
+          if (!ok) return null;
 
-        return {
-          id: String(user._id),
-          name: user.fullName,
-          role: user.role,
-          dmsNumber: user.dmsNumber,
-          className: user.className,
-        } as AppUser;
+          return {
+            id: String(user._id),
+            name: user.fullName,
+            role: user.role,
+            dmsNumber: user.dmsNumber,
+            className: user.className,
+          } as AppUser;
+        } catch (error) {
+          console.error("Student login failed:", error);
+          return null;
+        }
       },
     }),
     Credentials({
@@ -82,24 +87,30 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<AppUser | null> {
-        if (!credentials?.email || !credentials?.password) return null;
+        try {
+          if (!credentials?.email || !credentials?.password) return null;
+          const email = credentials.email.toLowerCase().trim();
 
-        await connectMongoose();
-        const user = await User.findOne({
-          email: credentials.email,
-          role: "admin",
-        });
-        if (!user) return null;
+          await connectMongoose();
+          const user = await User.findOne({
+            email,
+            role: "admin",
+          });
+          if (!user) return null;
 
-        const ok = await bcrypt.compare(credentials.password, user.password);
-        if (!ok) return null;
+          const ok = await bcrypt.compare(credentials.password, user.password);
+          if (!ok) return null;
 
-        return {
-          id: String(user._id),
-          name: user.fullName,
-          role: user.role,
-          email: user.email,
-        } as AppUser;
+          return {
+            id: String(user._id),
+            name: user.fullName,
+            role: user.role,
+            email: user.email,
+          } as AppUser;
+        } catch (error) {
+          console.error("Admin login failed:", error);
+          return null;
+        }
       },
     }),
   ],

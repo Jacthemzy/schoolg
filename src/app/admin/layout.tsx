@@ -1,7 +1,19 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAppSession } from "@/lib/server/auth";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const session = await getAppSession();
+
+  if (!session?.user?.id) {
+    redirect("/login/admin");
+  }
+
+  if (session.user.role !== "admin") {
+    redirect(session.user.role === "student" ? "/dashboard" : "/");
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-8">

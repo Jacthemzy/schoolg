@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormError } from "@/components/auth/form-error";
 
@@ -17,7 +16,6 @@ const adminLoginSchema = z.object({
 type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 
 export function AdminLoginForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<AdminLoginInput>({
@@ -31,18 +29,28 @@ export function AdminLoginForm() {
   async function onSubmit(values: AdminLoginInput) {
     setError(null);
 
-    const res = await signIn("admin-credentials", {
-      redirect: false,
-      email: values.email,
-      password: values.password,
-    });
+    try {
+      const res = await signIn("admin-credentials", {
+        redirect: false,
+        callbackUrl: "/admin",
+        email: values.email,
+        password: values.password,
+      });
 
-    if (res?.error) {
-      setError("Invalid admin email or password.");
-      return;
+      if (res?.error) {
+        setError("Invalid admin email or password.");
+        return;
+      }
+
+      if (!res?.ok || !res.url) {
+        setError("Login could not be completed. Please try again.");
+        return;
+      }
+
+      window.location.assign(res.url);
+    } catch {
+      setError("Login could not be completed. Please try again.");
     }
-
-    router.push("/admin");
   }
 
   return (

@@ -3,9 +3,14 @@ import { Schema, model, models, type Model, type Types } from "mongoose";
 export interface IQuestion {
   _id: Types.ObjectId;
   examId: Types.ObjectId;
+  questionType: "text" | "image";
+  answerType: "objective" | "theory";
   questionText: string;
+  questionImageUrl?: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer?: number;
+  theoryKeywords: string[];
+  theorySampleAnswer?: string;
   marks: number;
   questionNumber: number;
   createdAt: Date;
@@ -13,9 +18,57 @@ export interface IQuestion {
 
 const QuestionSchema = new Schema<IQuestion>({
   examId: { type: Schema.Types.ObjectId, ref: "Exam", required: true },
-  questionText: { type: String, required: true },
-  options: [{ type: String, required: true }],
-  correctAnswer: { type: Number, required: true },
+  questionType: { type: String, enum: ["text", "image"], default: "text" },
+  answerType: {
+    type: String,
+    enum: ["objective", "theory"],
+    default: "objective",
+  },
+  questionText: {
+    type: String,
+    default: "",
+    validate: {
+      validator(this: IQuestion, value: string) {
+        return Boolean(String(value ?? "").trim() || this.questionImageUrl);
+      },
+      message: "Question text or image is required.",
+    },
+  },
+  questionImageUrl: { type: String },
+  options: {
+    type: [{ type: String, required: true }],
+    default: [],
+    validate: {
+      validator(this: IQuestion, value: string[]) {
+        return this.answerType === "theory" || value.length >= 2;
+      },
+      message: "Objective questions need at least two options.",
+    },
+  },
+  correctAnswer: {
+    type: Number,
+    validate: {
+      validator(this: IQuestion, value?: number) {
+        if (this.answerType === "theory") {
+          return value === undefined || value === null;
+        }
+
+        return Number.isInteger(value) && value >= 0 && value < this.options.length;
+      },
+      message: "Objective questions need a valid correct answer.",
+    },
+  },
+  theoryKeywords: {
+    type: [{ type: String, required: true }],
+    default: [],
+    validate: {
+      validator(this: IQuestion, value: string[]) {
+        return this.answerType === "objective" || value.length > 0;
+      },
+      message: "Theory questions need at least one keyword.",
+    },
+  },
+  theorySampleAnswer: { type: String },
   marks: { type: Number, required: true },
   questionNumber: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now },

@@ -2,8 +2,12 @@ import { Schema, model, models, type Model, type Types } from "mongoose";
 
 export interface IAnswerRecord {
   questionId: Types.ObjectId;
-  selectedOption: number;
+  selectedOption?: number;
+  answerText?: string;
   isCorrect: boolean;
+  scoreAwarded: number;
+  matchedKeywords: string[];
+  expectedKeywords: string[];
 }
 
 export type ResultStatus = "in_progress" | "submitted";
@@ -25,8 +29,12 @@ export interface IResult {
 
 const AnswerSchema = new Schema<IAnswerRecord>({
   questionId: { type: Schema.Types.ObjectId, ref: "Question", required: true },
-  selectedOption: { type: Number, required: true },
+  selectedOption: { type: Number },
+  answerText: { type: String },
   isCorrect: { type: Boolean, required: true },
+  scoreAwarded: { type: Number, required: true, default: 0 },
+  matchedKeywords: { type: [String], default: [] },
+  expectedKeywords: { type: [String], default: [] },
 });
 
 const ResultSchema = new Schema<IResult>({

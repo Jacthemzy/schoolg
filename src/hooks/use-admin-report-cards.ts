@@ -9,11 +9,14 @@ export type AdminReportCard = {
   studentId: string;
   studentName: string;
   studentDmsNumber: string;
+  gender: string;
   className: string;
   term: string;
   sessionLabel: string;
   attendanceDays?: number;
   nextTermBegins?: string;
+  resumptionDate?: string;
+  teacherName: string;
   subjects: ReportCardRow[];
   subjectCount: number;
   totalObtained: number;
@@ -32,6 +35,9 @@ export type SaveReportCardInput = {
   sessionLabel: string;
   attendanceDays?: number | string;
   nextTermBegins?: string;
+  resumptionDate?: string;
+  gender?: string;
+  teacherName?: string;
   subjects: ReportCardRow[];
   teacherComment?: string;
   principalComment?: string;

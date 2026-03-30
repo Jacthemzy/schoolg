@@ -12,9 +12,13 @@ function esc(text: string) {
 export function renderReportCardSvg(report: ReportCardView) {
   const width = 1240;
   const rowHeight = 34;
-  const tableTop = 290;
+  const tableTop = 355;
   const maxRows = Math.max(report.subjects.length, 10);
   const height = tableTop + maxRows * rowHeight + 280;
+  const generatedLabel = new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(report.generatedAt);
 
   const rows = report.subjects
     .map((item, index) => {
@@ -47,31 +51,48 @@ export function renderReportCardSvg(report: ReportCardView) {
         .center { text-anchor: middle; }
         .rule { stroke: #000; stroke-width: 1; }
         .box { fill: #fff; stroke: #000; stroke-width: 2; }
+        .stampOuter { fill: rgba(190, 24, 93, 0.08); stroke: rgba(136, 19, 55, 0.62); stroke-width: 4; }
+        .stampInner { fill: none; stroke: rgba(136, 19, 55, 0.48); stroke-width: 2; }
+        .stampHead { font: 700 12px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); letter-spacing: 1.5px; }
+        .stampMain { font: 700 16px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); }
+        .stampMeta { font: 700 10px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); letter-spacing: 1.2px; }
+        .stampDate { font: 600 11px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); }
       </style>
       <rect width="100%" height="100%" fill="#fff"/>
       <rect x="30" y="30" width="1180" height="${height - 60}" class="box"/>
-      <text x="620" y="80" text-anchor="middle" class="title">STUDENT REPORT CARD</text>
-      <text x="620" y="110" text-anchor="middle" class="subtitle">Nigerian Continuous Assessment Format</text>
+      <circle cx="1090" cy="112" r="78" class="stampOuter"/>
+      <circle cx="1090" cy="112" r="63" class="stampInner"/>
+      <text x="1090" y="82" text-anchor="middle" class="stampHead">OFFICIAL STAMP</text>
+      <text x="1090" y="106" text-anchor="middle" class="stampMain">${esc(report.schoolName.toUpperCase())}</text>
+      <text x="1090" y="128" text-anchor="middle" class="stampMeta">GENERATED</text>
+      <text x="1090" y="148" text-anchor="middle" class="stampDate">${esc(generatedLabel)}</text>
+      <text x="620" y="60" text-anchor="middle" class="title">${esc(report.schoolName.toUpperCase())}</text>
+      <text x="620" y="88" text-anchor="middle" class="subtitle">Education for Success and Peace</text>
+      <text x="620" y="112" text-anchor="middle" class="meta">08164039006, 08106565953</text>
+      <text x="620" y="138" text-anchor="middle" class="meta">STUDENT REPORT CARD</text>
 
-      <text x="60" y="160" class="meta">Student Name: ${esc(report.studentName)}</text>
-      <text x="760" y="160" class="meta">DMS No: ${esc(report.studentDmsNumber || "-")}</text>
-      <text x="60" y="195" class="meta">Class: ${esc(report.className)}</text>
-      <text x="360" y="195" class="meta">Term: ${esc(report.term)}</text>
-      <text x="600" y="195" class="meta">Session: ${esc(report.sessionLabel)}</text>
-      <text x="900" y="195" class="meta">Attendance: ${esc(String(report.attendanceDays ?? "-"))}</text>
-      <text x="60" y="230" class="meta">No. of Subjects: ${report.subjectCount}</text>
-      <text x="360" y="230" class="meta">Total Score: ${report.totalObtained}</text>
-      <text x="600" y="230" class="meta">Average: ${report.average.toFixed(2)}%</text>
-      <text x="900" y="230" class="meta">Next Term Begins: ${esc(report.nextTermBegins || "-")}</text>
+      <text x="60" y="175" class="meta">Student Name: ${esc(report.studentName)}</text>
+      <text x="760" y="175" class="meta">DMS No: ${esc(report.studentDmsNumber || "-")}</text>
+      <text x="60" y="205" class="meta">Gender: ${esc(report.gender || "-")}</text>
+      <text x="360" y="205" class="meta">Class: ${esc(report.className)}</text>
+      <text x="760" y="205" class="meta">Teacher: ${esc(report.teacherName || "-")}</text>
+      <text x="60" y="235" class="meta">Term: ${esc(report.term)}</text>
+      <text x="360" y="235" class="meta">Session: ${esc(report.sessionLabel)}</text>
+      <text x="760" y="235" class="meta">Attendance: ${esc(String(report.attendanceDays ?? "-"))}</text>
+      <text x="60" y="265" class="meta">No. of Subjects: ${report.subjectCount}</text>
+      <text x="360" y="265" class="meta">Total Score: ${report.totalObtained}</text>
+      <text x="600" y="265" class="meta">Average: ${report.average.toFixed(2)}%</text>
+      <text x="900" y="265" class="meta">Next Term Begins: ${esc(report.nextTermBegins || "-")}</text>
+      <text x="900" y="295" class="meta">Resumption Date: ${esc(report.resumptionDate || "-")}</text>
 
-      <line x1="50" y1="255" x2="1190" y2="255" class="rule"/>
-      <text x="70" y="272" class="head">S/N</text>
-      <text x="125" y="272" class="head">Subject</text>
-      <text x="620" y="272" class="head center">CA</text>
-      <text x="740" y="272" class="head center">Exam</text>
-      <text x="860" y="272" class="head center">Total</text>
-      <text x="980" y="272" class="head center">Grade</text>
-      <text x="1095" y="272" class="head center">Remark</text>
+      <line x1="50" y1="320" x2="1190" y2="320" class="rule"/>
+      <text x="70" y="337" class="head">S/N</text>
+      <text x="125" y="337" class="head">Subject</text>
+      <text x="620" y="337" class="head center">CA</text>
+      <text x="740" y="337" class="head center">Exam</text>
+      <text x="860" y="337" class="head center">Total</text>
+      <text x="980" y="337" class="head center">Grade</text>
+      <text x="1095" y="337" class="head center">Remark</text>
       ${rowLines}
       <line x1="100" y1="255" x2="100" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
       <line x1="580" y1="255" x2="580" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
@@ -87,7 +108,7 @@ export function renderReportCardSvg(report: ReportCardView) {
       <text x="60" y="${height - 80}" class="meta">${esc(report.principalComment)}</text>
       <line x1="60" y1="${height - 40}" x2="370" y2="${height - 40}" class="rule"/>
       <line x1="830" y1="${height - 40}" x2="1140" y2="${height - 40}" class="rule"/>
-      <text x="60" y="${height - 18}" class="meta">Class Teacher</text>
+      <text x="60" y="${height - 18}" class="meta">${esc(report.teacherName || "Class Teacher")}</text>
       <text x="830" y="${height - 18}" class="meta">Principal</text>
     </svg>
   `;

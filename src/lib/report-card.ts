@@ -12,13 +12,17 @@ export type ReportCardRow = {
 export type ReportCardView = {
   id: string;
   studentId: string;
+  schoolName: string;
   studentName: string;
   studentDmsNumber: string;
+  gender: string;
   className: string;
   term: string;
   sessionLabel: string;
   attendanceDays?: number;
   nextTermBegins?: string;
+  resumptionDate?: string;
+  teacherName: string;
   subjects: ReportCardRow[];
   subjectCount: number;
   totalObtained: number;
@@ -26,6 +30,7 @@ export type ReportCardView = {
   average: number;
   teacherComment: string;
   principalComment: string;
+  generatedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -101,13 +106,17 @@ export function buildReportCardView(reportCard: ReportCardLike): ReportCardView 
   return {
     id: String(reportCard._id),
     studentId: String(reportCard.studentId),
+    schoolName: "Divine Mission School",
     studentName: reportCard.studentName,
     studentDmsNumber: reportCard.studentDmsNumber ?? "",
+    gender: reportCard.gender?.trim() || "",
     className: reportCard.className,
     term: reportCard.term,
     sessionLabel: reportCard.sessionLabel,
     attendanceDays: reportCard.attendanceDays,
     nextTermBegins: reportCard.nextTermBegins,
+    resumptionDate: reportCard.resumptionDate,
+    teacherName: reportCard.teacherName?.trim() || "Class Teacher",
     subjects,
     subjectCount: subjects.length,
     totalObtained,
@@ -116,6 +125,7 @@ export function buildReportCardView(reportCard: ReportCardLike): ReportCardView 
     teacherComment: reportCard.teacherComment?.trim() || defaultTeacherComment(average),
     principalComment:
       reportCard.principalComment?.trim() || defaultPrincipalComment(average),
+    generatedAt: new Date(),
     createdAt: reportCard.createdAt,
     updatedAt: reportCard.updatedAt,
   };
