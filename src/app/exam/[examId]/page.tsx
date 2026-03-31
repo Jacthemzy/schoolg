@@ -1,20 +1,22 @@
 import { redirect } from "next/navigation";
-import { ExamSessionClient } from "@/components/student/exam-session-client";
+import {
+  ExamSessionClient,
+  type ExamPhase,
+  type ExamSessionPayload,
+} from "@/components/student/exam-session-client";
 import { StartExamClient } from "@/components/student/start-exam-client";
 import { getAppSession } from "@/lib/server/auth";
 import { getAttemptSession, getExamForStudent } from "@/lib/server/exam-session";
 
-type ExamSessionPhase = "reading" | "exam" | "submitted";
-
-function isExamSessionPhase(value: string): value is ExamSessionPhase {
+function isExamPhase(value: string): value is ExamPhase {
   return value === "reading" || value === "exam" || value === "submitted";
 }
 
-function getValidatedPhase(value: string): ExamSessionPhase {
-  return isExamSessionPhase(value) ? value : "submitted";
+function getValidatedPhase(value: string): ExamPhase {
+  return isExamPhase(value) ? value : "submitted";
 }
 
-function getInitialTimeLeft(phase: ExamSessionPhase, attempt: {
+function getInitialTimeLeft(phase: ExamPhase, attempt: {
   readingEndsAt?: Date;
   examEndsAt?: Date;
 }) {
@@ -71,7 +73,7 @@ export default async function ExamPage({
 
   const phase = getValidatedPhase(sessionState.phase);
 
-  const initialData = {
+  const initialData: ExamSessionPayload = {
     exam: {
       id: String(sessionState.exam._id),
       title: sessionState.exam.title,
@@ -107,7 +109,7 @@ export default async function ExamPage({
           questionNumber: sessionState.currentQuestion.questionNumber,
         }
       : null,
-  } as const;
+  };
 
   return (
     <ExamSessionClient

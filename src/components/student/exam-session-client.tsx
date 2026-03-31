@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type ExamSessionPayload = {
+export type ExamPhase = "reading" | "exam" | "submitted";
+
+export type ExamSessionPayload = {
   exam: {
     id: string;
     title: string;
@@ -25,7 +27,7 @@ type ExamSessionPayload = {
     examEndsAt?: string;
     answersCount: number;
   };
-  phase: "reading" | "exam" | "submitted";
+  phase: ExamPhase;
   questionsCount: number;
   currentQuestion: null | {
     id: string;
