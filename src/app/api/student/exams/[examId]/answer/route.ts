@@ -40,6 +40,7 @@ export async function POST(
 
   if (question.answerType === "objective") {
     if (
+      selectedOption === undefined ||
       !Number.isInteger(selectedOption) ||
       selectedOption < 0 ||
       selectedOption >= question.options.length
