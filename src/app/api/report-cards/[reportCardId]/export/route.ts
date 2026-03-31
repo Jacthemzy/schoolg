@@ -11,7 +11,7 @@ import { requireSession } from "@/lib/server/auth";
 import { ReportCard } from "@/models/ReportCard";
 
 function toBinaryBody(buffer: Buffer) {
-  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
 export async function GET(
