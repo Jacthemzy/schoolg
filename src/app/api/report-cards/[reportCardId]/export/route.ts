@@ -10,6 +10,10 @@ import { buildReportCardView } from "@/lib/report-card";
 import { requireSession } from "@/lib/server/auth";
 import { ReportCard } from "@/models/ReportCard";
 
+function toBinaryBody(buffer: Buffer) {
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ reportCardId: string }> },
@@ -57,7 +61,7 @@ export async function GET(
     const normalizedFormat = format === "jpg" ? "jpeg" : format;
     const buffer = await renderReportCardRaster(view, normalizedFormat);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(toBinaryBody(buffer), {
       headers: {
         "Content-Type": normalizedFormat === "png" ? "image/png" : "image/jpeg",
         "Content-Disposition": `attachment; filename="${safeName}.${normalizedFormat}"`,
@@ -66,7 +70,7 @@ export async function GET(
   }
 
   const pdf = await renderReportCardPdf(view);
-  return new NextResponse(pdf, {
+  return new NextResponse(toBinaryBody(pdf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${safeName}.pdf"`,
