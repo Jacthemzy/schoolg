@@ -4,7 +4,17 @@ import { StartExamClient } from "@/components/student/start-exam-client";
 import { getAppSession } from "@/lib/server/auth";
 import { getAttemptSession, getExamForStudent } from "@/lib/server/exam-session";
 
-function getInitialTimeLeft(phase: "reading" | "exam" | "submitted", attempt: {
+type ExamSessionPhase = "reading" | "exam" | "submitted";
+
+function isExamSessionPhase(value: string): value is ExamSessionPhase {
+  return value === "reading" || value === "exam" || value === "submitted";
+}
+
+function getValidatedPhase(value: string): ExamSessionPhase {
+  return isExamSessionPhase(value) ? value : "submitted";
+}
+
+function getInitialTimeLeft(phase: ExamSessionPhase, attempt: {
   readingEndsAt?: Date;
   examEndsAt?: Date;
 }) {
@@ -59,6 +69,8 @@ export default async function ExamPage({
     );
   }
 
+  const phase = getValidatedPhase(sessionState.phase);
+
   const initialData = {
     exam: {
       id: String(sessionState.exam._id),
@@ -81,7 +93,7 @@ export default async function ExamPage({
       examEndsAt: sessionState.attempt.examEndsAt?.toISOString(),
       answersCount: sessionState.attempt.answers.length,
     },
-    phase: sessionState.phase,
+    phase,
     questionsCount: sessionState.questionsCount,
     currentQuestion: sessionState.currentQuestion
       ? {
@@ -101,7 +113,7 @@ export default async function ExamPage({
     <ExamSessionClient
       examId={examId}
       initialData={initialData}
-      initialTimeLeft={getInitialTimeLeft(sessionState.phase, sessionState.attempt)}
+      initialTimeLeft={getInitialTimeLeft(phase, sessionState.attempt)}
     />
   );
 }
