@@ -85,7 +85,12 @@ export async function POST(
 
   if (
     answerType === "objective" &&
-    (!Number.isInteger(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length)
+    (
+      correctAnswer === undefined ||
+      !Number.isInteger(correctAnswer) ||
+      correctAnswer < 0 ||
+      correctAnswer >= options.length
+    )
   ) {
     return NextResponse.json(
       { error: "Correct answer must point to a valid option." },
@@ -139,4 +144,3 @@ export async function POST(
     { status: 201 },
   );
 }
-
