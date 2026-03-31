@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
-import { buildReportCardView, normalizeReportSubject } from "@/lib/report-card";
+import {
+  buildReportCardView,
+  normalizeReportSubject,
+  type ReportCardRow,
+} from "@/lib/report-card";
 import { requireSession, requireRole } from "@/lib/server/auth";
 import { ReportCard } from "@/models/ReportCard";
 import { Result } from "@/models/Result";
@@ -111,7 +115,7 @@ export async function POST(request: Request) {
         .map((item: unknown) =>
           normalizeReportSubject((item ?? {}) as Record<string, unknown>),
         )
-        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .filter((item: ReportCardRow | null): item is ReportCardRow => Boolean(item))
     : [];
 
   if (subjects.length === 0) {
