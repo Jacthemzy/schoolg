@@ -42,26 +42,26 @@ export async function GET(request: NextRequest) {
     const subjectMap = new Map<string, ReturnType<typeof normalizeReportSubject>>();
 
     for (const result of results) {
-        const exam = examMap.get(String(result.examId));
-        if (!exam?.subject) continue;
+      const exam = examMap.get(String(result.examId));
+      if (!exam?.subject) continue;
 
-        const total = result.totalMarks
-          ? Math.round((result.score / result.totalMarks) * 100 * 100) / 100
-          : 0;
+      const total = result.totalMarks
+        ? Math.round((result.score / result.totalMarks) * 100 * 100) / 100
+        : 0;
 
-        subjectMap.set(
-          exam.subject.toLowerCase(),
-          normalizeReportSubject({
+      subjectMap.set(
+        exam.subject.toLowerCase(),
+        normalizeReportSubject({
           subject: exam.subject,
           classWork: 0,
           examScore: total,
           total,
-          }),
-        );
-      }
+        }),
+      );
+    }
 
     const subjects = Array.from(subjectMap.values()).filter(
-      (item): item is NonNullable<typeof item> => Boolean(item),
+      (item: ReportCardRow | null): item is ReportCardRow => Boolean(item),
     );
 
     return NextResponse.json(subjects);

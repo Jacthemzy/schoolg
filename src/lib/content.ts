@@ -28,10 +28,16 @@ async function fileExists(filePath: string) {
 }
 
 export async function listContentSlugs() {
+  const exists = await fileExists(CONTENT_DIR);
+  if (!exists) {
+    return [];
+  }
+
   const entries = await fs.readdir(CONTENT_DIR, { withFileTypes: true });
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
-    .map((entry) => entry.name.replace(/\.md$/, ""));
+    .map((entry) => entry.name.replace(/\.md$/, ""))
+    .sort((left, right) => left.localeCompare(right));
 }
 
 export async function readContentBySlug(slug: string): Promise<ContentEntry | null> {

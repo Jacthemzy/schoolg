@@ -3,7 +3,7 @@ import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { connectMongoose } from "@/lib/mongoose";
-import { User } from "@/models/User";
+import { User, type UserRole } from "@/models/User";
 
 type StudentUser = {
   id: string;
@@ -23,7 +23,7 @@ type AdminUser = {
 type AppUser = (NextAuthUser & StudentUser) | (NextAuthUser & AdminUser);
 
 type AppJWT = JWT & {
-  role?: string;
+  role?: UserRole;
   dmsNumber?: string;
   className?: string;
   id?: string;
@@ -34,7 +34,7 @@ type AppSession = Session & {
     id?: string;
     name?: string | null;
     email?: string | null;
-    role?: string;
+    role?: UserRole;
     dmsNumber?: string;
     className?: string;
   };
@@ -66,13 +66,15 @@ export const authOptions: NextAuthOptions = {
           const ok = await bcrypt.compare(credentials.password, user.password);
           if (!ok) return null;
 
-          return {
+          const appUser: AppUser = {
             id: String(user._id),
             name: user.fullName,
             role: user.role,
             dmsNumber: user.dmsNumber,
             className: user.className,
-          } as AppUser;
+          };
+
+          return appUser;
         } catch (error) {
           console.error("Student login failed:", error);
           return null;
@@ -101,12 +103,14 @@ export const authOptions: NextAuthOptions = {
           const ok = await bcrypt.compare(credentials.password, user.password);
           if (!ok) return null;
 
-          return {
+          const appUser: AppUser = {
             id: String(user._id),
             name: user.fullName,
             role: user.role,
             email: user.email,
-          } as AppUser;
+          };
+
+          return appUser;
         } catch (error) {
           console.error("Admin login failed:", error);
           return null;

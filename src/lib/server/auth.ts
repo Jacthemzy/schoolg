@@ -2,11 +2,12 @@ import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth-options";
+import type { UserRole } from "@/models/User";
 
 type AppSession = Session & {
   user?: {
     id?: string;
-    role?: string;
+    role?: UserRole;
     dmsNumber?: string;
     className?: string;
     email?: string | null;

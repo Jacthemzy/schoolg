@@ -53,6 +53,10 @@ const QuestionSchema = new Schema<IQuestion>({
           return value === undefined || value === null;
         }
 
+        if (value === undefined || value === null) {
+          return false;
+        }
+
         return Number.isInteger(value) && value >= 0 && value < this.options.length;
       },
       message: "Objective questions need a valid correct answer.",

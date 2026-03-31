@@ -78,7 +78,10 @@ export function ReportCardManager() {
   const average = useMemo(() => {
     const validRows = rows.filter((row) => row.subject.trim());
     if (!validRows.length) return 0;
-    const total = validRows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+    const total = validRows.reduce(
+      (sum: number, row: ReportCardRow) => sum + Number(row.total || 0),
+      0,
+    );
     return Math.round((total / validRows.length) * 100) / 100;
   }, [rows]);
 

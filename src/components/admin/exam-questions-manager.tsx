@@ -514,8 +514,8 @@ function parseBulkQuestions(input: string): ParsedQuestion[] {
       if (!Array.isArray(parsed)) return [];
 
       return parsed
-        .map((item) => normalizeImportedQuestion(item as Record<string, unknown>))
-        .filter((item): item is ParsedQuestion => Boolean(item));
+        .map((item: unknown) => normalizeImportedQuestion(item as Record<string, unknown>))
+        .filter((item: ParsedQuestion | null): item is ParsedQuestion => Boolean(item));
     } catch {
       return [];
     }
@@ -529,7 +529,7 @@ function parseBulkQuestions(input: string): ParsedQuestion[] {
 
   return blocks
     .map((block) => parseQuestionBlock(block))
-    .filter((item): item is ParsedQuestion => Boolean(item));
+    .filter((item: ParsedQuestion | null): item is ParsedQuestion => Boolean(item));
 }
 
 function parseQuestionBlock(block: string): ParsedQuestion | null {
@@ -630,6 +630,7 @@ function normalizeImportedQuestion(
     (!questionText && !questionImageUrl) ||
     (answerType === "objective" &&
       (options.length < 2 ||
+        correctAnswer === undefined ||
         !Number.isInteger(correctAnswer) ||
         correctAnswer < 0 ||
         correctAnswer >= options.length)) ||
