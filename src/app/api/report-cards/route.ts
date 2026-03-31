@@ -134,7 +134,10 @@ export async function POST(request: Request) {
 
   const average =
     Math.round(
-      (subjects.reduce((sum, item) => sum + item.total, 0) / subjects.length) * 100,
+      (
+        subjects.reduce((sum: number, item: ReportCardRow) => sum + item.total, 0) /
+        subjects.length
+      ) * 100,
     ) / 100;
 
   const reportCard = await ReportCard.findOneAndUpdate(

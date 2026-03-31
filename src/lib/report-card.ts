@@ -97,7 +97,10 @@ export function buildReportCardView(reportCard: ReportCardLike): ReportCardView 
     .map((item) => normalizeReportSubject(item))
     .filter((item): item is ReportCardRow => Boolean(item));
 
-  const totalObtained = subjects.reduce((sum, item) => sum + item.total, 0);
+  const totalObtained = subjects.reduce(
+    (sum: number, item: ReportCardRow) => sum + item.total,
+    0,
+  );
   const totalPossible = subjects.length * 100;
   const average = subjects.length
     ? Math.round((totalObtained / subjects.length) * 100) / 100
