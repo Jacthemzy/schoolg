@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
 
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const studentId = String(body.studentId ?? "").trim();
   const className = String(body.className ?? "").trim();
   const term = String(body.term ?? "").trim();

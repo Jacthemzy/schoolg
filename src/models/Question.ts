@@ -28,8 +28,9 @@ const QuestionSchema = new Schema<IQuestion>({
     type: String,
     default: "",
     validate: {
-      validator(this: IQuestion, value: string) {
-        return Boolean(String(value ?? "").trim() || this.questionImageUrl);
+      validator(value: string) {
+        const question = this as IQuestion;
+        return Boolean(String(value ?? "").trim() || question.questionImageUrl);
       },
       message: "Question text or image is required.",
     },
@@ -39,8 +40,9 @@ const QuestionSchema = new Schema<IQuestion>({
     type: [{ type: String, required: true }],
     default: [],
     validate: {
-      validator(this: IQuestion, value: string[]) {
-        return this.answerType === "theory" || value.length >= 2;
+      validator(value: string[]) {
+        const question = this as IQuestion;
+        return question.answerType === "theory" || value.length >= 2;
       },
       message: "Objective questions need at least two options.",
     },
@@ -48,8 +50,9 @@ const QuestionSchema = new Schema<IQuestion>({
   correctAnswer: {
     type: Number,
     validate: {
-      validator(this: IQuestion, value?: number) {
-        if (this.answerType === "theory") {
+      validator(value?: number) {
+        const question = this as IQuestion;
+        if (question.answerType === "theory") {
           return value === undefined || value === null;
         }
 
@@ -57,7 +60,7 @@ const QuestionSchema = new Schema<IQuestion>({
           return false;
         }
 
-        return Number.isInteger(value) && value >= 0 && value < this.options.length;
+        return Number.isInteger(value) && value >= 0 && value < question.options.length;
       },
       message: "Objective questions need a valid correct answer.",
     },
@@ -66,8 +69,9 @@ const QuestionSchema = new Schema<IQuestion>({
     type: [{ type: String, required: true }],
     default: [],
     validate: {
-      validator(this: IQuestion, value: string[]) {
-        return this.answerType === "objective" || value.length > 0;
+      validator(value: string[]) {
+        const question = this as IQuestion;
+        return question.answerType === "objective" || value.length > 0;
       },
       message: "Theory questions need at least one keyword.",
     },

@@ -31,7 +31,8 @@ export async function POST(request: Request) {
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
 
-  const payload = createExamSchema.safeParse(await request.json());
+  const body = await request.json().catch(() => ({}));
+  const payload = createExamSchema.safeParse(body);
 
   if (!payload.success) {
     return NextResponse.json(

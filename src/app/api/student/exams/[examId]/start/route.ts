@@ -15,10 +15,13 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { examId } = await context.params;
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const password = String(body.examPassword ?? "");
   const className = auth.session.user?.className;
   const studentId = auth.session.user?.id;
+  if (!studentId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const examState = await canStartExam(examId, className);
   if (!examState.ok) {
@@ -30,7 +33,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid exam password." }, { status: 401 });
   }
 
-  const existingAttempt = await getAttempt(studentId!, examId);
+  const existingAttempt = await getAttempt(studentId, examId);
 
   if (existingAttempt?.status === "submitted") {
     return NextResponse.json(
@@ -39,7 +42,7 @@ export async function POST(
     );
   }
 
-  const attempt = existingAttempt ?? (await createAttempt(studentId!, examId));
+  const attempt = existingAttempt ?? (await createAttempt(studentId, examId));
 
   return NextResponse.json({
     success: true,

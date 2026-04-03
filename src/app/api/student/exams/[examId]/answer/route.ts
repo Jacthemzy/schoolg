@@ -17,14 +17,18 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { examId } = await context.params;
-  const body = await request.json();
+  const studentId = auth.session.user?.id;
+  if (!studentId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const body = await request.json().catch(() => ({}));
   const selectedOption =
     body.selectedOption === undefined || body.selectedOption === null
       ? undefined
       : Number(body.selectedOption);
   const answerText = String(body.answerText ?? "").trim();
 
-  const sessionState = await getAttemptSession(auth.session.user!.id!, examId);
+  const sessionState = await getAttemptSession(studentId, examId);
   if (!sessionState) {
     return NextResponse.json({ error: "Exam session not found." }, { status: 404 });
   }
@@ -55,7 +59,7 @@ export async function POST(
   }
 
   await connectMongoose();
-  const attempt = await Result.findOne({ studentId: auth.session.user!.id!, examId });
+  const attempt = await Result.findOne({ studentId, examId });
 
   if (!attempt) {
     return NextResponse.json({ error: "Exam attempt not found." }, { status: 404 });
@@ -92,7 +96,7 @@ export async function POST(
   });
 
   if (!nextQuestion) {
-    const finalized = await finalizeAttempt(auth.session.user!.id!, examId);
+    const finalized = await finalizeAttempt(studentId, examId);
     return NextResponse.json({
       success: true,
       submitted: true,

@@ -10,7 +10,11 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { examId } = await context.params;
-  const attempt = await finalizeAttempt(auth.session.user!.id!, examId);
+  const studentId = auth.session.user?.id;
+  if (!studentId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const attempt = await finalizeAttempt(studentId, examId);
 
   if (!attempt) {
     return NextResponse.json({ error: "Exam attempt not found." }, { status: 404 });

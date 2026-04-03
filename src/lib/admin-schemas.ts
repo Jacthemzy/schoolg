@@ -12,6 +12,7 @@ export const createExamSchema = z.object({
   isActive: z.boolean().default(false),
 });
 
+export type CreateExamFormValues = z.input<typeof createExamSchema>;
 export type CreateExamInput = z.infer<typeof createExamSchema>;
 
 export const createQuestionSchema = z
@@ -99,4 +100,5 @@ export const createQuestionSchema = z
   });
 
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
+export type CreateQuestionFormValues = z.input<typeof createQuestionSchema>;
 

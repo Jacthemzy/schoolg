@@ -46,7 +46,7 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { examId } = await context.params;
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
 
   if (!Types.ObjectId.isValid(examId)) {
     return NextResponse.json({ error: "Invalid exam id." }, { status: 400 });

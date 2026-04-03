@@ -1,24 +1,17 @@
 import { redirect } from "next/navigation";
-import {
-  ExamSessionClient,
-  type ExamPhase,
-  type ExamSessionPayload,
-} from "@/components/student/exam-session-client";
+import { ExamSessionClient } from "@/components/student/exam-session-client";
 import { StartExamClient } from "@/components/student/start-exam-client";
+import {
+  getValidExamPhase,
+  normalizeExamSessionPayload,
+  type ExamPhase,
+} from "@/lib/exam-session-payload";
 import { getAppSession } from "@/lib/server/auth";
 import { getAttemptSession, getExamForStudent } from "@/lib/server/exam-session";
 
-function isExamPhase(value: string): value is ExamPhase {
-  return value === "reading" || value === "exam" || value === "submitted";
-}
-
-function getValidatedPhase(value: string): ExamPhase {
-  return isExamPhase(value) ? value : "submitted";
-}
-
 function getInitialTimeLeft(phase: ExamPhase, attempt: {
-  readingEndsAt?: Date;
-  examEndsAt?: Date;
+  readingEndsAt?: Date | string | null;
+  examEndsAt?: Date | string | null;
 }) {
   const target =
     phase === "reading"
@@ -31,7 +24,12 @@ function getInitialTimeLeft(phase: ExamPhase, attempt: {
     return 0;
   }
 
-  return Math.max(0, Math.floor((target.getTime() - Date.now()) / 1000));
+  const deadline = new Date(target).getTime();
+  if (Number.isNaN(deadline)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((deadline - Date.now()) / 1000));
 }
 
 export default async function ExamPage({
@@ -71,9 +69,9 @@ export default async function ExamPage({
     );
   }
 
-  const phase = getValidatedPhase(sessionState.phase);
+  const phase = getValidExamPhase(sessionState.phase);
 
-  const initialData: ExamSessionPayload = {
+  const initialData = normalizeExamSessionPayload({
     exam: {
       id: String(sessionState.exam._id),
       title: sessionState.exam.title,
@@ -109,8 +107,7 @@ export default async function ExamPage({
           questionNumber: sessionState.currentQuestion.questionNumber,
         }
       : null,
-  };
-
+  });
   return (
     <ExamSessionClient
       examId={examId}

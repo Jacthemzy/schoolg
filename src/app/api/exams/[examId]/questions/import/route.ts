@@ -41,7 +41,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid exam id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const rawQuestions = Array.isArray(body.questions) ? body.questions : [];
 
   const questions = rawQuestions

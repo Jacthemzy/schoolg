@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getValidExamPhase } from "@/lib/exam-session-payload";
 import { requireRole } from "@/lib/server/auth";
 import { getAttemptSession } from "@/lib/server/exam-session";
 
@@ -10,7 +11,11 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { examId } = await context.params;
-  const sessionState = await getAttemptSession(auth.session.user!.id!, examId);
+  const studentId = auth.session.user?.id;
+  if (!studentId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const sessionState = await getAttemptSession(studentId, examId);
 
   if (!sessionState) {
     return NextResponse.json(
@@ -38,12 +43,12 @@ export async function GET(
       totalMarks: attempt.totalMarks,
       status: attempt.status,
       currentQuestionNumber: attempt.currentQuestionNumber,
-      submittedAt: attempt.submittedAt,
-      readingEndsAt: attempt.readingEndsAt,
-      examEndsAt: attempt.examEndsAt,
+      submittedAt: attempt.submittedAt?.toISOString(),
+      readingEndsAt: attempt.readingEndsAt?.toISOString(),
+      examEndsAt: attempt.examEndsAt?.toISOString(),
       answersCount: attempt.answers.length,
     },
-    phase,
+    phase: getValidExamPhase(phase),
     questionsCount,
     currentQuestion: currentQuestion
       ? {

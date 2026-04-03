@@ -2,44 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-export type ExamPhase = "reading" | "exam" | "submitted";
-
-export type ExamSessionPayload = {
-  exam: {
-    id: string;
-    title: string;
-    description: string;
-    subject: string;
-    classTarget: string;
-    readingTime: number;
-    duration: number;
-    totalMarks: number;
-  };
-  attempt: {
-    id: string;
-    score: number;
-    totalMarks: number;
-    status: string;
-    currentQuestionNumber: number;
-    submittedAt?: string;
-    readingEndsAt?: string;
-    examEndsAt?: string;
-    answersCount: number;
-  };
-  phase: ExamPhase;
-  questionsCount: number;
-  currentQuestion: null | {
-    id: string;
-    questionType: "text" | "image";
-    answerType: "objective" | "theory";
-    questionText: string;
-    questionImageUrl?: string;
-    options: string[];
-    marks: number;
-    questionNumber: number;
-  };
-};
+import {
+  normalizeExamSessionPayload,
+  type ExamSessionPayload,
+} from "@/lib/exam-session-payload";
 
 export function ExamSessionClient({
   examId,
@@ -51,7 +17,9 @@ export function ExamSessionClient({
   initialTimeLeft: number;
 }) {
   const router = useRouter();
-  const [sessionData, setSessionData] = useState(initialData);
+  const [sessionData, setSessionData] = useState(() =>
+    normalizeExamSessionPayload(initialData),
+  );
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [theoryAnswer, setTheoryAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -112,9 +80,9 @@ export function ExamSessionClient({
       const res = await fetch(`/api/student/exams/${examId}/session`, {
         credentials: "include",
       });
-      const data = await res.json();
+      const data = (await res.json()) as Record<string, unknown>;
       if (res.ok) {
-        setSessionData(data);
+        setSessionData(normalizeExamSessionPayload(data));
       }
     };
 
@@ -167,10 +135,10 @@ export function ExamSessionClient({
     const nextRes = await fetch(`/api/student/exams/${examId}/session`, {
       credentials: "include",
     });
-    const nextData = await nextRes.json();
+    const nextData = (await nextRes.json()) as Record<string, unknown>;
 
     if (nextRes.ok) {
-      setSessionData(nextData);
+      setSessionData(normalizeExamSessionPayload(nextData));
       setSelectedOption(null);
       setTheoryAnswer("");
     }

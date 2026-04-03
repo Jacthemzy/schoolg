@@ -5,7 +5,11 @@ import { useForm } from "react-hook-form";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { createQuestionSchema, type CreateQuestionInput } from "@/lib/admin-schemas";
+import {
+  createQuestionSchema,
+  type CreateQuestionFormValues,
+  type CreateQuestionInput,
+} from "@/lib/admin-schemas";
 import { useAdminQuestions, useCreateQuestion } from "@/hooks/use-admin-questions";
 import { useAdminExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
 
@@ -32,7 +36,7 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const form = useForm<CreateQuestionInput>({
+  const form = useForm<CreateQuestionFormValues, undefined, CreateQuestionInput>({
     resolver: zodResolver(createQuestionSchema),
     defaultValues: {
       questionType: "text",

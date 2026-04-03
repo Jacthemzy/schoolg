@@ -117,18 +117,18 @@ export function renderReportCardSvg(report: ReportCardView) {
 export async function renderReportCardRaster(
   report: ReportCardView,
   format: "png" | "jpeg",
-) {
+): Promise<Uint8Array> {
   const svg = renderReportCardSvg(report);
   const renderer = sharp(Buffer.from(svg));
+  const raster =
+    format === "jpeg"
+      ? await renderer.jpeg({ quality: 92 }).toBuffer()
+      : await renderer.png().toBuffer();
 
-  if (format === "jpeg") {
-    return renderer.jpeg({ quality: 92 }).toBuffer();
-  }
-
-  return renderer.png().toBuffer();
+  return new Uint8Array(raster);
 }
 
-export async function renderReportCardPdf(report: ReportCardView) {
+export async function renderReportCardPdf(report: ReportCardView): Promise<Uint8Array> {
   const image = await renderReportCardRaster(report, "jpeg");
   const metadata = await sharp(image).metadata();
   const pageWidth = 595.28;
@@ -165,7 +165,7 @@ function buildPdfWithJpeg({
   x,
   y,
 }: {
-  jpegBuffer: Buffer;
+  jpegBuffer: Uint8Array;
   imageWidth: number;
   imageHeight: number;
   pageWidth: number;
@@ -174,7 +174,7 @@ function buildPdfWithJpeg({
   drawHeight: number;
   x: number;
   y: number;
-}) {
+}): Uint8Array {
   const header = Buffer.from("%PDF-1.4\n%\xFF\xFF\xFF\xFF\n", "binary");
   const parts: Buffer[] = [header];
   const offsets: number[] = [0];
@@ -224,5 +224,5 @@ function buildPdfWithJpeg({
 
   const trailer = `xref\n0 ${offsets.length}\n${xrefEntries}\ntrailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
-  return Buffer.concat([...parts, Buffer.from(trailer)]);
+  return new Uint8Array(Buffer.concat([...parts, Buffer.from(trailer)]));
 }
