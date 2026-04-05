@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createExamSchema,
-  type CreateExamFormValues,
   type CreateExamInput,
 } from "@/lib/admin-schemas";
 import { useAdminExams, useCreateExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
@@ -14,7 +13,7 @@ export default function AdminExamsPage() {
   const createExam = useCreateExam();
   const updateStatus = useUpdateExamStatus();
 
-  const form = useForm<CreateExamFormValues, undefined, CreateExamInput>({
+  const form = useForm<CreateExamInput>({
     resolver: zodResolver(createExamSchema),
     defaultValues: {
       title: "",
@@ -93,7 +92,7 @@ export default function AdminExamsPage() {
             <input
               type="number"
               className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-              {...form.register("readingTime")}
+              {...form.register("readingTime", { valueAsNumber: true })}
             />
             <ErrorMessage message={form.formState.errors.readingTime?.message} />
           </div>
@@ -103,7 +102,7 @@ export default function AdminExamsPage() {
             <input
               type="number"
               className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-              {...form.register("duration")}
+              {...form.register("duration", { valueAsNumber: true })}
             />
             <ErrorMessage message={form.formState.errors.duration?.message} />
           </div>
@@ -113,7 +112,7 @@ export default function AdminExamsPage() {
             <input
               type="number"
               className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-              {...form.register("totalMarks")}
+              {...form.register("totalMarks", { valueAsNumber: true })}
             />
             <ErrorMessage message={form.formState.errors.totalMarks?.message} />
           </div>
