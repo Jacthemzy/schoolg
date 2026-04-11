@@ -24,94 +24,105 @@ export function renderReportCardSvg(report: ReportCardView) {
     .map((item, index) => {
       const y = tableTop + (index + 1) * rowHeight;
       return `
-        <text x="70" y="${y}" class="cell">${index + 1}</text>
-        <text x="125" y="${y}" class="cell">${esc(item.subject)}</text>
-        <text x="620" y="${y}" class="cell center">${item.classWork}</text>
-        <text x="740" y="${y}" class="cell center">${item.examScore}</text>
-        <text x="860" y="${y}" class="cell center">${item.total}</text>
-        <text x="980" y="${y}" class="cell center">${esc(item.grade)}</text>
-        <text x="1095" y="${y}" class="cell center">${esc(item.remark)}</text>
+        <text x="70" y="${y}" ${cellTextStyle()}>${index + 1}</text>
+        <text x="125" y="${y}" ${cellTextStyle()}>${esc(item.subject)}</text>
+        <text x="620" y="${y}" ${cellTextStyle("middle")}>${item.classWork}</text>
+        <text x="740" y="${y}" ${cellTextStyle("middle")}>${item.examScore}</text>
+        <text x="860" y="${y}" ${cellTextStyle("middle")}>${item.total}</text>
+        <text x="980" y="${y}" ${cellTextStyle("middle")}>${esc(item.grade)}</text>
+        <text x="1095" y="${y}" ${cellTextStyle("middle")}>${esc(item.remark)}</text>
       `;
     })
     .join("");
 
   const rowLines = Array.from({ length: maxRows + 1 }, (_, index) => {
     const y = tableTop - 18 + index * rowHeight;
-    return `<line x1="50" y1="${y}" x2="1190" y2="${y}" class="rule"/>`;
+    return `<line x1="50" y1="${y}" x2="1190" y2="${y}" ${lineStyle()}/>`;
   }).join("");
 
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <style>
-        .title { font: 700 32px Arial, sans-serif; fill: #000; }
-        .subtitle { font: 700 16px Arial, sans-serif; fill: #000; }
-        .meta { font: 400 17px Arial, sans-serif; fill: #000; }
-        .head { font: 700 16px Arial, sans-serif; fill: #000; }
-        .cell { font: 400 15px Arial, sans-serif; fill: #000; dominant-baseline: middle; }
-        .center { text-anchor: middle; }
-        .rule { stroke: #000; stroke-width: 1; }
-        .box { fill: #fff; stroke: #000; stroke-width: 2; }
-        .stampOuter { fill: rgba(190, 24, 93, 0.08); stroke: rgba(136, 19, 55, 0.62); stroke-width: 4; }
-        .stampInner { fill: none; stroke: rgba(136, 19, 55, 0.48); stroke-width: 2; }
-        .stampHead { font: 700 12px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); letter-spacing: 1.5px; }
-        .stampMain { font: 700 16px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); }
-        .stampMeta { font: 700 10px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); letter-spacing: 1.2px; }
-        .stampDate { font: 600 11px Arial, sans-serif; fill: rgba(127, 29, 29, 0.82); }
-      </style>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Student report card">
       <rect width="100%" height="100%" fill="#fff"/>
-      <rect x="30" y="30" width="1180" height="${height - 60}" class="box"/>
-      <circle cx="1090" cy="112" r="78" class="stampOuter"/>
-      <circle cx="1090" cy="112" r="63" class="stampInner"/>
-      <text x="1090" y="82" text-anchor="middle" class="stampHead">OFFICIAL STAMP</text>
-      <text x="1090" y="106" text-anchor="middle" class="stampMain">${esc(report.schoolName.toUpperCase())}</text>
-      <text x="1090" y="128" text-anchor="middle" class="stampMeta">GENERATED</text>
-      <text x="1090" y="148" text-anchor="middle" class="stampDate">${esc(generatedLabel)}</text>
-      <text x="620" y="60" text-anchor="middle" class="title">${esc(report.schoolName.toUpperCase())}</text>
-      <text x="620" y="88" text-anchor="middle" class="subtitle">Education for Success and Peace</text>
-      <text x="620" y="112" text-anchor="middle" class="meta">08164039006, 08106565953</text>
-      <text x="620" y="138" text-anchor="middle" class="meta">STUDENT REPORT CARD</text>
+      <rect x="30" y="30" width="1180" height="${height - 60}" fill="#fff" stroke="#000" stroke-width="2"/>
+      <circle cx="1090" cy="112" r="78" fill="#fde8f0" fill-opacity="0.75" stroke="#881337" stroke-opacity="0.62" stroke-width="4"/>
+      <circle cx="1090" cy="112" r="63" fill="none" stroke="#881337" stroke-opacity="0.48" stroke-width="2"/>
+      <text x="1090" y="82" ${textStyle(12, 700, "middle", "#7f1d1d", "1.5px")}>OFFICIAL STAMP</text>
+      <text x="1090" y="106" ${textStyle(16, 700, "middle", "#7f1d1d")}>${esc(report.schoolName.toUpperCase())}</text>
+      <text x="1090" y="128" ${textStyle(10, 700, "middle", "#7f1d1d", "1.2px")}>GENERATED</text>
+      <text x="1090" y="148" ${textStyle(11, 600, "middle", "#7f1d1d")}>${esc(generatedLabel)}</text>
+      <text x="620" y="60" ${textStyle(32, 700, "middle")}>${esc(report.schoolName.toUpperCase())}</text>
+      <text x="620" y="88" ${textStyle(16, 700, "middle")}>Education for Success and Peace</text>
+      <text x="620" y="112" ${textStyle(17, 400, "middle")}>08164039006, 08106565953</text>
+      <text x="620" y="138" ${textStyle(17, 400, "middle")}>STUDENT REPORT CARD</text>
 
-      <text x="60" y="175" class="meta">Student Name: ${esc(report.studentName)}</text>
-      <text x="760" y="175" class="meta">DMS No: ${esc(report.studentDmsNumber || "-")}</text>
-      <text x="60" y="205" class="meta">Gender: ${esc(report.gender || "-")}</text>
-      <text x="360" y="205" class="meta">Class: ${esc(report.className)}</text>
-      <text x="760" y="205" class="meta">Teacher: ${esc(report.teacherName || "-")}</text>
-      <text x="60" y="235" class="meta">Term: ${esc(report.term)}</text>
-      <text x="360" y="235" class="meta">Session: ${esc(report.sessionLabel)}</text>
-      <text x="760" y="235" class="meta">Attendance: ${esc(String(report.attendanceDays ?? "-"))}</text>
-      <text x="60" y="265" class="meta">No. of Subjects: ${report.subjectCount}</text>
-      <text x="360" y="265" class="meta">Total Score: ${report.totalObtained}</text>
-      <text x="600" y="265" class="meta">Average: ${report.average.toFixed(2)}%</text>
-      <text x="900" y="265" class="meta">Next Term Begins: ${esc(report.nextTermBegins || "-")}</text>
-      <text x="900" y="295" class="meta">Resumption Date: ${esc(report.resumptionDate || "-")}</text>
+      <text x="60" y="175" ${textStyle(17, 400)}>Student Name: ${esc(report.studentName)}</text>
+      <text x="760" y="175" ${textStyle(17, 400)}>DMS No: ${esc(report.studentDmsNumber || "-")}</text>
+      <text x="60" y="205" ${textStyle(17, 400)}>Gender: ${esc(report.gender || "-")}</text>
+      <text x="360" y="205" ${textStyle(17, 400)}>Class: ${esc(report.className)}</text>
+      <text x="760" y="205" ${textStyle(17, 400)}>Teacher: ${esc(report.teacherName || "-")}</text>
+      <text x="60" y="235" ${textStyle(17, 400)}>Term: ${esc(report.term)}</text>
+      <text x="360" y="235" ${textStyle(17, 400)}>Session: ${esc(report.sessionLabel)}</text>
+      <text x="760" y="235" ${textStyle(17, 400)}>Attendance: ${esc(String(report.attendanceDays ?? "-"))}</text>
+      <text x="60" y="265" ${textStyle(17, 400)}>No. of Subjects: ${report.subjectCount}</text>
+      <text x="360" y="265" ${textStyle(17, 400)}>Total Score: ${report.totalObtained}</text>
+      <text x="600" y="265" ${textStyle(17, 400)}>Average: ${report.average.toFixed(2)}%</text>
+      <text x="900" y="265" ${textStyle(17, 400)}>Next Term Begins: ${esc(report.nextTermBegins || "-")}</text>
+      <text x="900" y="295" ${textStyle(17, 400)}>Resumption Date: ${esc(report.resumptionDate || "-")}</text>
 
-      <line x1="50" y1="320" x2="1190" y2="320" class="rule"/>
-      <text x="70" y="337" class="head">S/N</text>
-      <text x="125" y="337" class="head">Subject</text>
-      <text x="620" y="337" class="head center">CA</text>
-      <text x="740" y="337" class="head center">Exam</text>
-      <text x="860" y="337" class="head center">Total</text>
-      <text x="980" y="337" class="head center">Grade</text>
-      <text x="1095" y="337" class="head center">Remark</text>
+      <line x1="50" y1="320" x2="1190" y2="320" ${lineStyle()}/>
+      <text x="70" y="337" ${textStyle(16, 700)}>S/N</text>
+      <text x="125" y="337" ${textStyle(16, 700)}>Subject</text>
+      <text x="620" y="337" ${textStyle(16, 700, "middle")}>CA</text>
+      <text x="740" y="337" ${textStyle(16, 700, "middle")}>Exam</text>
+      <text x="860" y="337" ${textStyle(16, 700, "middle")}>Total</text>
+      <text x="980" y="337" ${textStyle(16, 700, "middle")}>Grade</text>
+      <text x="1095" y="337" ${textStyle(16, 700, "middle")}>Remark</text>
       ${rowLines}
-      <line x1="100" y1="255" x2="100" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
-      <line x1="580" y1="255" x2="580" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
-      <line x1="680" y1="255" x2="680" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
-      <line x1="800" y1="255" x2="800" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
-      <line x1="920" y1="255" x2="920" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
-      <line x1="1040" y1="255" x2="1040" y2="${tableTop - 18 + maxRows * rowHeight}" class="rule"/>
+      <line x1="100" y1="255" x2="100" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <line x1="580" y1="255" x2="580" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <line x1="680" y1="255" x2="680" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <line x1="800" y1="255" x2="800" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <line x1="920" y1="255" x2="920" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <line x1="1040" y1="255" x2="1040" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
       ${rows}
 
-      <text x="60" y="${height - 190}" class="head">Teacher's Comment</text>
-      <text x="60" y="${height - 160}" class="meta">${esc(report.teacherComment)}</text>
-      <text x="60" y="${height - 110}" class="head">Principal's Comment</text>
-      <text x="60" y="${height - 80}" class="meta">${esc(report.principalComment)}</text>
-      <line x1="60" y1="${height - 40}" x2="370" y2="${height - 40}" class="rule"/>
-      <line x1="830" y1="${height - 40}" x2="1140" y2="${height - 40}" class="rule"/>
-      <text x="60" y="${height - 18}" class="meta">${esc(report.teacherName || "Class Teacher")}</text>
-      <text x="830" y="${height - 18}" class="meta">Principal</text>
+      <text x="60" y="${height - 190}" ${textStyle(16, 700)}>Teacher's Comment</text>
+      <text x="60" y="${height - 160}" ${textStyle(17, 400)}>${esc(report.teacherComment)}</text>
+      <text x="60" y="${height - 110}" ${textStyle(16, 700)}>Principal's Comment</text>
+      <text x="60" y="${height - 80}" ${textStyle(17, 400)}>${esc(report.principalComment)}</text>
+      <line x1="60" y1="${height - 40}" x2="370" y2="${height - 40}" ${lineStyle()}/>
+      <line x1="830" y1="${height - 40}" x2="1140" y2="${height - 40}" ${lineStyle()}/>
+      <text x="60" y="${height - 18}" ${textStyle(17, 400)}>${esc(report.teacherName || "Class Teacher")}</text>
+      <text x="830" y="${height - 18}" ${textStyle(17, 400)}>Principal</text>
     </svg>
   `;
+}
+
+function textStyle(
+  size: number,
+  weight: number,
+  anchor?: "start" | "middle" | "end",
+  fill = "#000",
+  letterSpacing?: string,
+) {
+  return [
+    'font-family="Arial, sans-serif"',
+    `font-size="${size}"`,
+    `font-weight="${weight}"`,
+    `fill="${fill}"`,
+    anchor ? `text-anchor="${anchor}"` : "",
+    letterSpacing ? `letter-spacing="${letterSpacing}"` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function cellTextStyle(anchor?: "start" | "middle" | "end") {
+  return `${textStyle(15, 400, anchor)} dominant-baseline="middle"`;
+}
+
+function lineStyle() {
+  return 'stroke="#000" stroke-width="1" shape-rendering="crispEdges"';
 }
 
 export async function renderReportCardRaster(
