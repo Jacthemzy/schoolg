@@ -10,8 +10,21 @@ import { buildReportCardView } from "@/lib/report-card";
 import { requireSession } from "@/lib/server/auth";
 import { ReportCard } from "@/models/ReportCard";
 
-function toBinaryBlob(buffer: Uint8Array) {
-  return new Blob([new Uint8Array(buffer)]);
+function binaryResponse(
+  bytes: Uint8Array,
+  contentType: string,
+  filename: string,
+) {
+  const body = Buffer.from(bytes);
+
+  return new NextResponse(body, {
+    headers: {
+      "Content-Type": contentType,
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Length": String(body.byteLength),
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 export async function GET(
@@ -53,6 +66,7 @@ export async function GET(
       headers: {
         "Content-Type": "image/svg+xml",
         "Content-Disposition": `attachment; filename="${safeName}.svg"`,
+        "Cache-Control": "no-store",
       },
     });
   }
@@ -61,19 +75,13 @@ export async function GET(
     const normalizedFormat = format === "jpg" ? "jpeg" : format;
     const buffer = await renderReportCardRaster(view, normalizedFormat);
 
-    return new NextResponse(toBinaryBlob(buffer), {
-      headers: {
-        "Content-Type": normalizedFormat === "png" ? "image/png" : "image/jpeg",
-        "Content-Disposition": `attachment; filename="${safeName}.${normalizedFormat}"`,
-      },
-    });
+    return binaryResponse(
+      buffer,
+      normalizedFormat === "png" ? "image/png" : "image/jpeg",
+      `${safeName}.${normalizedFormat}`,
+    );
   }
 
   const pdf = await renderReportCardPdf(view);
-  return new NextResponse(toBinaryBlob(pdf), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${safeName}.pdf"`,
-    },
-  });
+  return binaryResponse(pdf, "application/pdf", `${safeName}.pdf`);
 }
