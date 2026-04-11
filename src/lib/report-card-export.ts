@@ -13,7 +13,7 @@ export function renderReportCardSvg(report: ReportCardView) {
   const rowHeight = 34;
   const tableTop = 355;
   const maxRows = Math.max(report.subjects.length, 10);
-  const height = tableTop + maxRows * rowHeight + 280;
+  const height = tableTop + maxRows * rowHeight + 340;
   const generatedLabel = new Intl.DateTimeFormat("en-NG", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -43,12 +43,23 @@ export function renderReportCardSvg(report: ReportCardView) {
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Student report card">
       <rect width="100%" height="100%" fill="#fff"/>
       <rect x="30" y="30" width="1180" height="${height - 60}" fill="#fff" stroke="#000" stroke-width="2"/>
-      <circle cx="1090" cy="112" r="78" fill="#fde8f0" fill-opacity="0.75" stroke="#881337" stroke-opacity="0.62" stroke-width="4"/>
-      <circle cx="1090" cy="112" r="63" fill="none" stroke="#881337" stroke-opacity="0.48" stroke-width="2"/>
-      <text x="1090" y="82" ${textStyle(12, 700, "middle", "#7f1d1d", "1.5px")}>OFFICIAL STAMP</text>
-      <text x="1090" y="106" ${textStyle(16, 700, "middle", "#7f1d1d")}>${esc(report.schoolName.toUpperCase())}</text>
-      <text x="1090" y="128" ${textStyle(10, 700, "middle", "#7f1d1d", "1.2px")}>GENERATED</text>
-      <text x="1090" y="148" ${textStyle(11, 600, "middle", "#7f1d1d")}>${esc(generatedLabel)}</text>
+      <g opacity="0.12" transform="rotate(-14 620 480)">
+        <circle cx="620" cy="480" r="190" fill="#dcfce7" stroke="#166534" stroke-width="7"/>
+        <circle cx="620" cy="480" r="154" fill="none" stroke="#166534" stroke-width="4" stroke-dasharray="10 8"/>
+        <text x="620" y="412" ${textStyle(18, 700, "middle", "#14532d", "4px")}>OFFICIAL STAMP</text>
+        <text x="620" y="452" ${textStyle(28, 700, "middle", "#14532d")}>${esc(report.schoolName.toUpperCase())}</text>
+        <text x="620" y="488" ${textStyle(14, 700, "middle", "#14532d", "1.6px")}>EDUCATION FOR SUCCESS AND PEACE</text>
+        <text x="620" y="524" ${textStyle(11, 700, "middle", "#14532d", "2px")}>GENERATED ON</text>
+        <text x="620" y="552" ${textStyle(13, 600, "middle", "#14532d")}>${esc(generatedLabel)}</text>
+      </g>
+      <circle cx="1090" cy="112" r="82" fill="#f0fdf4" fill-opacity="0.96" stroke="#166534" stroke-opacity="0.7" stroke-width="4"/>
+      <circle cx="1090" cy="112" r="66" fill="none" stroke="#166534" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="1090" y="76" ${textStyle(10, 700, "middle", "#14532d", "2px")}>OFFICIAL</text>
+      <text x="1090" y="91" ${textStyle(10, 700, "middle", "#14532d", "2px")}>STAMP</text>
+      <text x="1090" y="111" ${textStyle(13, 700, "middle", "#14532d")}>${esc(report.schoolName.toUpperCase())}</text>
+      <text x="1090" y="131" ${textStyle(7.6, 700, "middle", "#14532d", "0.6px")}>EDUCATION FOR SUCCESS</text>
+      <text x="1090" y="143" ${textStyle(7.6, 700, "middle", "#14532d", "0.6px")}>AND PEACE</text>
+      <text x="1090" y="160" ${textStyle(8, 600, "middle", "#14532d")}>${esc(generatedLabel)}</text>
       <text x="620" y="60" ${textStyle(32, 700, "middle")}>${esc(report.schoolName.toUpperCase())}</text>
       <text x="620" y="88" ${textStyle(16, 700, "middle")}>Education for Success and Peace</text>
       <text x="620" y="112" ${textStyle(17, 400, "middle")}>08164039006, 08106565953</text>
@@ -89,10 +100,26 @@ export function renderReportCardSvg(report: ReportCardView) {
       <text x="60" y="${height - 160}" ${textStyle(17, 400)}>${esc(report.teacherComment)}</text>
       <text x="60" y="${height - 110}" ${textStyle(16, 700)}>Principal's Comment</text>
       <text x="60" y="${height - 80}" ${textStyle(17, 400)}>${esc(report.principalComment)}</text>
-      <line x1="60" y1="${height - 40}" x2="370" y2="${height - 40}" ${lineStyle()}/>
-      <line x1="830" y1="${height - 40}" x2="1140" y2="${height - 40}" ${lineStyle()}/>
-      <text x="60" y="${height - 18}" ${textStyle(17, 400)}>${esc(report.teacherName || "Class Teacher")}</text>
-      <text x="830" y="${height - 18}" ${textStyle(17, 400)}>Principal</text>
+      <text x="60" y="${height - 42}" ${textStyle(30, 600, "start", "#111827")}>${esc(
+        makeSignature(report.teacherName || "Class Teacher"),
+      )}</text>
+      <text x="830" y="${height - 42}" ${textStyle(30, 600, "start", "#111827")}>${esc(
+        makeSignature("Divine Mission School"),
+      )}</text>
+      <line x1="60" y1="${height - 24}" x2="370" y2="${height - 24}" ${lineStyle()}/>
+      <line x1="830" y1="${height - 24}" x2="1140" y2="${height - 24}" ${lineStyle()}/>
+      <text x="60" y="${height - 2}" ${textStyle(12, 700, "start", "#475569", "1.4px")}>CLASS TEACHER</text>
+      <text x="60" y="${height + 16}" ${textStyle(13, 400, "start", "#111827")}>${esc(
+        report.teacherName || "Class Teacher",
+      )}</text>
+      <text x="60" y="${height + 34}" ${textStyle(11, 400, "start", "#475569")}>Signed ${esc(
+        generatedLabel,
+      )}</text>
+      <text x="830" y="${height - 2}" ${textStyle(12, 700, "start", "#475569", "1.4px")}>PRINCIPAL</text>
+      <text x="830" y="${height + 16}" ${textStyle(13, 400, "start", "#111827")}>Divine Mission School</text>
+      <text x="830" y="${height + 34}" ${textStyle(11, 400, "start", "#475569")}>Signed ${esc(
+        generatedLabel,
+      )}</text>
     </svg>
   `;
 }
@@ -133,7 +160,7 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   const rowHeight = 22;
   const tableTop = 265;
   const maxRows = Math.max(report.subjects.length, 10);
-  const pageHeight = tableTop + maxRows * rowHeight + 210;
+  const pageHeight = tableTop + maxRows * rowHeight + 250;
   const generatedLabel = new Intl.DateTimeFormat("en-NG", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -156,6 +183,18 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   const top = (value: number) => pageHeight - value;
   const line = (x1: number, y1: number, x2: number, y2: number) =>
     `${x1.toFixed(2)} ${top(y1).toFixed(2)} m ${x2.toFixed(2)} ${top(y2).toFixed(2)} l S`;
+  const circle = (cx: number, cy: number, radius: number) => {
+    const c = 0.552284749831 * radius;
+    const y = top(cy);
+    return [
+      `${(cx + radius).toFixed(2)} ${y.toFixed(2)} m`,
+      `${(cx + radius).toFixed(2)} ${(y + c).toFixed(2)} ${(cx + c).toFixed(2)} ${(y + radius).toFixed(2)} ${cx.toFixed(2)} ${(y + radius).toFixed(2)} c`,
+      `${(cx - c).toFixed(2)} ${(y + radius).toFixed(2)} ${(cx - radius).toFixed(2)} ${(y + c).toFixed(2)} ${(cx - radius).toFixed(2)} ${y.toFixed(2)} c`,
+      `${(cx - radius).toFixed(2)} ${(y - c).toFixed(2)} ${(cx - c).toFixed(2)} ${(y - radius).toFixed(2)} ${cx.toFixed(2)} ${(y - radius).toFixed(2)} c`,
+      `${(cx + c).toFixed(2)} ${(y - radius).toFixed(2)} ${(cx + radius).toFixed(2)} ${(y - c).toFixed(2)} ${(cx + radius).toFixed(2)} ${y.toFixed(2)} c`,
+      "S",
+    ].join("\n");
+  };
   const text = (
     x: number,
     y: number,
@@ -176,6 +215,26 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
     `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(
       2,
     )} Tm ${textWidth(value, size, font).toFixed(2)} 0 Td (${pdfEsc(value)}) Tj ET`;
+  const stampCircle = (x: number, y: number, radius: number, dashed = false) =>
+    [
+      "0.09 0.33 0.18 RG",
+      dashed ? "[5 4] 0 d" : "[] 0 d",
+      dashed ? "1.6 w" : "2.4 w",
+      circle(x, y, radius),
+      "[] 0 d",
+      "1 w",
+      "0 0 0 RG",
+    ].join("\n");
+  const watermarkCircle = (x: number, y: number, radius: number, dashed = false) =>
+    [
+      "0.82 0.93 0.85 RG",
+      dashed ? "[8 6] 0 d" : "[] 0 d",
+      dashed ? "2.2 w" : "4 w",
+      circle(x, y, radius),
+      "[] 0 d",
+      "1 w",
+      "0 0 0 RG",
+    ].join("\n");
 
   const contentParts = [
     "0 0 0 RG",
@@ -189,14 +248,21 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
     text(292, 70, "Education for Success and Peace", 11, "F2"),
     text(315, 88, "08164039006, 08106565953", 11),
     text(325, 108, "STUDENT REPORT CARD", 11),
-    text(620, 52, "OFFICIAL STAMP", 8, "F2"),
-    text(605, 68, report.schoolName.toUpperCase(), 9, "F2"),
-    text(634, 84, "GENERATED", 7, "F2"),
-    text(607, 98, generatedLabel, 8),
-    line(585, 36, 760, 36),
-    line(760, 36, 760, 112),
-    line(760, 112, 585, 112),
-    line(585, 112, 585, 36),
+    watermarkCircle(421, 405, 132),
+    watermarkCircle(421, 405, 108, true),
+    centeredText(421, 360, "OFFICIAL STAMP", 11.5, "F2"),
+    centeredText(421, 387, report.schoolName.toUpperCase(), 16, "F2"),
+    centeredText(421, 411, "EDUCATION FOR SUCCESS AND PEACE", 8, "F2"),
+    centeredText(421, 434, "GENERATED ON", 7.5, "F2"),
+    centeredText(421, 451, generatedLabel, 8),
+    stampCircle(680, 74, 53),
+    stampCircle(680, 74, 41, true),
+    centeredText(680, 44, "OFFICIAL", 7, "F2"),
+    centeredText(680, 55, "STAMP", 7, "F2"),
+    centeredText(680, 70, report.schoolName.toUpperCase(), 8.2, "F2"),
+    centeredText(680, 84, "EDUCATION FOR", 5.4, "F2"),
+    centeredText(680, 93, "SUCCESS AND PEACE", 5.4, "F2"),
+    centeredText(680, 105, generatedLabel, 6.4),
     text(40, 140, `Student Name: ${report.studentName}`, 11),
     text(430, 140, `DMS No: ${report.studentDmsNumber || "-"}`, 11),
     text(40, 162, `Gender: ${report.gender || "-"}`, 11),
@@ -247,10 +313,16 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   contentParts.push(text(40, commentTop + 18, report.teacherComment, 10));
   contentParts.push(text(40, commentTop + 50, "Principal's Comment", 10, "F2"));
   contentParts.push(text(40, commentTop + 68, report.principalComment, 10));
-  contentParts.push(line(40, pageHeight - 58, 230, pageHeight - 58));
-  contentParts.push(line(600, pageHeight - 58, 790, pageHeight - 58));
-  contentParts.push(text(40, pageHeight - 44, report.teacherName || "Class Teacher", 10));
-  contentParts.push(text(600, pageHeight - 44, "Principal", 10));
+  contentParts.push(text(40, pageHeight - 84, makeSignature(report.teacherName || "Class Teacher"), 20));
+  contentParts.push(text(600, pageHeight - 84, makeSignature("Divine Mission School"), 20));
+  contentParts.push(line(40, pageHeight - 68, 250, pageHeight - 68));
+  contentParts.push(line(600, pageHeight - 68, 790, pageHeight - 68));
+  contentParts.push(text(40, pageHeight - 52, "CLASS TEACHER", 9, "F2"));
+  contentParts.push(text(40, pageHeight - 38, report.teacherName || "Class Teacher", 10));
+  contentParts.push(text(40, pageHeight - 22, `Signed ${generatedLabel}`, 8));
+  contentParts.push(text(600, pageHeight - 52, "PRINCIPAL", 9, "F2"));
+  contentParts.push(text(600, pageHeight - 38, "Divine Mission School", 10));
+  contentParts.push(text(600, pageHeight - 22, `Signed ${generatedLabel}`, 8));
 
   const contentStream = contentParts.join("\n");
 
@@ -290,4 +362,12 @@ function pdfEsc(value: string) {
 function textWidth(value: string, size: number, font: "F1" | "F2") {
   const factor = font === "F2" ? 0.285 : 0.27;
   return -value.length * size * factor;
+}
+
+function makeSignature(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
