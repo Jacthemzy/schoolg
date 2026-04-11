@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import type { ReportCardView } from "@/lib/report-card";
 
 function esc(text: string) {
@@ -125,67 +124,20 @@ function lineStyle() {
   return 'stroke="#000" stroke-width="1" shape-rendering="crispEdges"';
 }
 
-export async function renderReportCardRaster(
-  report: ReportCardView,
-  format: "png" | "jpeg",
-): Promise<Uint8Array> {
-  const svg = renderReportCardSvg(report);
-  const renderer = sharp(Buffer.from(svg));
-  const raster =
-    format === "jpeg"
-      ? await renderer.jpeg({ quality: 92 }).toBuffer()
-      : await renderer.png().toBuffer();
-
-  return new Uint8Array(raster);
-}
-
 export async function renderReportCardPdf(report: ReportCardView): Promise<Uint8Array> {
-  const image = await renderReportCardRaster(report, "jpeg");
-  const metadata = await sharp(image).metadata();
-  const pageWidth = 595.28;
-  const pageHeight = 841.89;
-  const imageWidth = metadata.width ?? 1240;
-  const imageHeight = metadata.height ?? 1754;
-  const ratio = Math.min(pageWidth / imageWidth, pageHeight / imageHeight);
-  const drawWidth = imageWidth * ratio;
-  const drawHeight = imageHeight * ratio;
-  const x = (pageWidth - drawWidth) / 2;
-  const y = (pageHeight - drawHeight) / 2;
-
-  return buildPdfWithJpeg({
-    jpegBuffer: image,
-    imageWidth,
-    imageHeight,
-    pageWidth,
-    pageHeight,
-    drawWidth,
-    drawHeight,
-    x,
-    y,
-  });
+  return buildReportCardPdf(report);
 }
 
-function buildPdfWithJpeg({
-  jpegBuffer,
-  imageWidth,
-  imageHeight,
-  pageWidth,
-  pageHeight,
-  drawWidth,
-  drawHeight,
-  x,
-  y,
-}: {
-  jpegBuffer: Uint8Array;
-  imageWidth: number;
-  imageHeight: number;
-  pageWidth: number;
-  pageHeight: number;
-  drawWidth: number;
-  drawHeight: number;
-  x: number;
-  y: number;
-}): Uint8Array {
+function buildReportCardPdf(report: ReportCardView): Uint8Array {
+  const pageWidth = 842;
+  const rowHeight = 22;
+  const tableTop = 265;
+  const maxRows = Math.max(report.subjects.length, 10);
+  const pageHeight = tableTop + maxRows * rowHeight + 210;
+  const generatedLabel = new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(report.generatedAt);
   const header = Buffer.from("%PDF-1.4\n%\xFF\xFF\xFF\xFF\n", "binary");
   const parts: Buffer[] = [header];
   const offsets: number[] = [0];
@@ -201,26 +153,119 @@ function buildPdfWithJpeg({
     length += objectBuffer.length;
   };
 
+  const top = (value: number) => pageHeight - value;
+  const line = (x1: number, y1: number, x2: number, y2: number) =>
+    `${x1.toFixed(2)} ${top(y1).toFixed(2)} m ${x2.toFixed(2)} ${top(y2).toFixed(2)} l S`;
+  const text = (
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    font: "F1" | "F2" = "F1",
+  ) =>
+    `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(2)} Tm (${pdfEsc(
+      value,
+    )}) Tj ET`;
+  const centeredText = (
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    font: "F1" | "F2" = "F1",
+  ) =>
+    `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(
+      2,
+    )} Tm ${textWidth(value, size, font).toFixed(2)} 0 Td (${pdfEsc(value)}) Tj ET`;
+
+  const contentParts = [
+    "0 0 0 RG",
+    "0 0 0 rg",
+    "1 w",
+    line(20, 20, pageWidth - 20, 20),
+    line(pageWidth - 20, 20, pageWidth - 20, pageHeight - 20),
+    line(pageWidth - 20, pageHeight - 20, 20, pageHeight - 20),
+    line(20, pageHeight - 20, 20, 20),
+    text(245, 48, report.schoolName.toUpperCase(), 20, "F2"),
+    text(292, 70, "Education for Success and Peace", 11, "F2"),
+    text(315, 88, "08164039006, 08106565953", 11),
+    text(325, 108, "STUDENT REPORT CARD", 11),
+    text(620, 52, "OFFICIAL STAMP", 8, "F2"),
+    text(605, 68, report.schoolName.toUpperCase(), 9, "F2"),
+    text(634, 84, "GENERATED", 7, "F2"),
+    text(607, 98, generatedLabel, 8),
+    line(585, 36, 760, 36),
+    line(760, 36, 760, 112),
+    line(760, 112, 585, 112),
+    line(585, 112, 585, 36),
+    text(40, 140, `Student Name: ${report.studentName}`, 11),
+    text(430, 140, `DMS No: ${report.studentDmsNumber || "-"}`, 11),
+    text(40, 162, `Gender: ${report.gender || "-"}`, 11),
+    text(220, 162, `Class: ${report.className}`, 11),
+    text(430, 162, `Teacher: ${report.teacherName || "-"}`, 11),
+    text(40, 184, `Term: ${report.term}`, 11),
+    text(220, 184, `Session: ${report.sessionLabel}`, 11),
+    text(430, 184, `Attendance: ${String(report.attendanceDays ?? "-")}`, 11),
+    text(40, 206, `No. of Subjects: ${String(report.subjectCount)}`, 11),
+    text(220, 206, `Total Score: ${String(report.totalObtained)}`, 11),
+    text(400, 206, `Average: ${report.average.toFixed(2)}%`, 11),
+    text(560, 206, `Next Term Begins: ${report.nextTermBegins || "-"}`, 11),
+    text(560, 226, `Resumption Date: ${report.resumptionDate || "-"}`, 11),
+    line(35, 245, pageWidth - 35, 245),
+    text(45, 260, "S/N", 10, "F2"),
+    text(90, 260, "Subject", 10, "F2"),
+    text(435, 260, "CA", 10, "F2"),
+    text(510, 260, "Exam", 10, "F2"),
+    text(590, 260, "Total", 10, "F2"),
+    text(665, 260, "Grade", 10, "F2"),
+    text(730, 260, "Remark", 10, "F2"),
+    line(70, 192, 70, tableTop + maxRows * rowHeight),
+    line(400, 192, 400, tableTop + maxRows * rowHeight),
+    line(475, 192, 475, tableTop + maxRows * rowHeight),
+    line(555, 192, 555, tableTop + maxRows * rowHeight),
+    line(635, 192, 635, tableTop + maxRows * rowHeight),
+    line(705, 192, 705, tableTop + maxRows * rowHeight),
+  ];
+
+  for (let index = 0; index <= maxRows; index += 1) {
+    const y = tableTop + index * rowHeight;
+    contentParts.push(line(35, y, pageWidth - 35, y));
+  }
+
+  report.subjects.forEach((item, index) => {
+    const y = tableTop + 16 + index * rowHeight;
+    contentParts.push(text(45, y, String(index + 1), 10));
+    contentParts.push(text(90, y, item.subject, 10));
+    contentParts.push(text(435, y, String(item.classWork), 10));
+    contentParts.push(text(510, y, String(item.examScore), 10));
+    contentParts.push(text(590, y, String(item.total), 10));
+    contentParts.push(text(665, y, item.grade, 10));
+    contentParts.push(text(730, y, item.remark, 10));
+  });
+
+  const commentTop = tableTop + maxRows * rowHeight + 35;
+  contentParts.push(text(40, commentTop, "Teacher's Comment", 10, "F2"));
+  contentParts.push(text(40, commentTop + 18, report.teacherComment, 10));
+  contentParts.push(text(40, commentTop + 50, "Principal's Comment", 10, "F2"));
+  contentParts.push(text(40, commentTop + 68, report.principalComment, 10));
+  contentParts.push(line(40, pageHeight - 58, 230, pageHeight - 58));
+  contentParts.push(line(600, pageHeight - 58, 790, pageHeight - 58));
+  contentParts.push(text(40, pageHeight - 44, report.teacherName || "Class Teacher", 10));
+  contentParts.push(text(600, pageHeight - 44, "Principal", 10));
+
+  const contentStream = contentParts.join("\n");
+
   addObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
   addObject(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
   addObject(
     3,
     `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(
       2,
-    )}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`,
+    )}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
   );
-
-  const imageHeader = Buffer.from(
-    `<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBuffer.length} >>\nstream\n`,
-  );
-  const imageFooter = Buffer.from("\nendstream");
-  addObject(4, Buffer.concat([imageHeader, jpegBuffer, imageFooter]));
-
-  const contentStream = `q\n${drawWidth.toFixed(2)} 0 0 ${drawHeight.toFixed(
-    2,
-  )} ${x.toFixed(2)} ${y.toFixed(2)} cm\n/Im0 Do\nQ`;
+  addObject(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  addObject(5, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   addObject(
-    5,
+    6,
     `<< /Length ${Buffer.byteLength(contentStream)} >>\nstream\n${contentStream}\nendstream`,
   );
 
@@ -236,4 +281,13 @@ function buildPdfWithJpeg({
   const trailer = `xref\n0 ${offsets.length}\n${xrefEntries}\ntrailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
   return new Uint8Array(Buffer.concat([...parts, Buffer.from(trailer)]));
+}
+
+function pdfEsc(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function textWidth(value: string, size: number, font: "F1" | "F2") {
+  const factor = font === "F2" ? 0.285 : 0.27;
+  return -value.length * size * factor;
 }

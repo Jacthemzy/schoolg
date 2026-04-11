@@ -436,11 +436,8 @@ export function ReportCardManager() {
                         <a href={`/api/report-cards/${card.id}/export?format=pdf`} className="text-primary hover:underline">
                           PDF
                         </a>
-                        <a href={`/api/report-cards/${card.id}/export?format=png`} className="text-primary hover:underline">
-                          PNG
-                        </a>
-                        <a href={`/api/report-cards/${card.id}/export?format=jpeg`} className="text-primary hover:underline">
-                          JPEG
+                        <a href={`/api/report-cards/${card.id}/export?format=svg`} className="text-primary hover:underline">
+                          SVG
                         </a>
                       </div>
                     </td>

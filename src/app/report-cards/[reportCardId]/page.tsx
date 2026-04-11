@@ -84,10 +84,10 @@ export default async function ReportCardPage({
                 Download PDF
               </a>
               <a
-                href={`/api/report-cards/${view.id}/export?format=png`}
+                href={`/api/report-cards/${view.id}/export?format=svg`}
                 className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Download Picture
+                Download SVG
               </a>
             </div>
             {session.user.role === "student" ? <StudentSignOutButton /> : null}

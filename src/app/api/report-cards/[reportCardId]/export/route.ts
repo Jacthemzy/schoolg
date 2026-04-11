@@ -3,7 +3,6 @@ import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
 import {
   renderReportCardPdf,
-  renderReportCardRaster,
   renderReportCardSvg,
 } from "@/lib/report-card-export";
 import { buildReportCardView } from "@/lib/report-card";
@@ -61,7 +60,7 @@ export async function GET(
     .replace(/^-|-$/g, "")
     .toLowerCase();
 
-  if (format === "svg") {
+  if (format === "svg" || format === "png" || format === "jpeg" || format === "jpg") {
     return new NextResponse(renderReportCardSvg(view), {
       headers: {
         "Content-Type": "image/svg+xml",
@@ -69,17 +68,6 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
-  }
-
-  if (format === "png" || format === "jpeg" || format === "jpg") {
-    const normalizedFormat = format === "jpg" ? "jpeg" : format;
-    const buffer = await renderReportCardRaster(view, normalizedFormat);
-
-    return binaryResponse(
-      buffer,
-      normalizedFormat === "png" ? "image/png" : "image/jpeg",
-      `${safeName}.${normalizedFormat}`,
-    );
   }
 
   const pdf = await renderReportCardPdf(view);
