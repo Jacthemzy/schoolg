@@ -43,6 +43,10 @@ export default async function ReportCardPage({
   }
 
   const view = buildReportCardView(reportCard);
+  const generatedLabel = new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(view.generatedAt);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#e2e8f0_0%,#f8fafc_35%,#ffffff_100%)] px-4 py-8 sm:px-6">
@@ -74,20 +78,36 @@ export default async function ReportCardPage({
         <article className="mx-auto w-full max-w-[210mm] rounded-[2rem] border border-slate-300 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.12)] sm:p-8">
           <div className="border-b border-slate-300 pb-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-800">
-                  Education for Success and Peace
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold text-slate-950">{view.schoolName}</h2>
-                <p className="mt-2 text-sm text-slate-600">Official A4 report format</p>
+              <div className="flex-1">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-800">
+                      Education for Success and Peace
+                    </p>
+                    <h2 className="mt-3 text-3xl font-semibold text-slate-950">{view.schoolName}</h2>
+                    <p className="mt-2 text-sm text-slate-600">Official A4 report format</p>
+                    <p className="mt-1 text-sm text-slate-500">Generated: {generatedLabel}</p>
+                  </div>
+                  <SchoolStamp schoolName={view.schoolName} generatedLabel={generatedLabel} />
+                </div>
+
+                <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#f8fafc_100%)] px-5 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-800">
+                    Student Name
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{view.studentName}</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {view.className} • {view.term} • {view.sessionLabel}
+                  </p>
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
-                <MetaItem label="Student" value={view.studentName} />
                 <MetaItem label="DMS Number" value={view.studentDmsNumber || "N/A"} />
                 <MetaItem label="Class" value={view.className} />
                 <MetaItem label="Gender" value={view.gender || "Not provided"} />
                 <MetaItem label="Term" value={view.term} />
                 <MetaItem label="Session" value={view.sessionLabel} />
+                <MetaItem label="Generated" value={generatedLabel} />
               </div>
             </div>
           </div>
@@ -248,6 +268,31 @@ function SignatureCard({
         )}
       </div>
       <p className="mt-3 text-sm font-semibold text-slate-900">{name}</p>
+    </div>
+  );
+}
+
+function SchoolStamp({
+  schoolName,
+  generatedLabel,
+}: {
+  schoolName: string;
+  generatedLabel: string;
+}) {
+  return (
+    <div className="relative h-36 w-36 shrink-0 rounded-full border-[4px] border-emerald-700/60 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.98)_0%,rgba(220,252,231,0.9)_60%,rgba(187,247,208,0.82)_100%)] text-center text-emerald-950 shadow-[0_18px_40px_rgba(22,101,52,0.14)]">
+      <div className="absolute inset-[8px] rounded-full border-[2px] border-emerald-800/55" />
+      <div className="absolute inset-[18px] rounded-full border border-dashed border-emerald-700/40" />
+      <div className="flex h-full flex-col items-center justify-center px-4">
+        <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-800/80">
+          Official Stamp
+        </p>
+        <p className="mt-2 text-xs font-bold uppercase leading-4">{schoolName}</p>
+        <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-800/80">
+          Generated
+        </p>
+        <p className="mt-1 text-[10px] font-semibold leading-4">{generatedLabel}</p>
+      </div>
     </div>
   );
 }
