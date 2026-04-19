@@ -1,4 +1,4 @@
-import type { ReportCardView } from "@/lib/report-card";
+import { getGradePalette, type ReportCardView } from "@/lib/report-card";
 
 function esc(text: string) {
   return text
@@ -10,124 +10,123 @@ function esc(text: string) {
 
 export function renderReportCardSvg(report: ReportCardView) {
   const width = 1240;
-  const rowHeight = 34;
-  const tableTop = 355;
-  const maxRows = Math.max(report.subjects.length, 10);
-  const height = tableTop + maxRows * rowHeight + 340;
-  const generatedLabel = new Intl.DateTimeFormat("en-NG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(report.generatedAt);
+  const height = 1754;
+  const rowHeight = 46;
+  const tableTop = 440;
+  const behaviourTop = tableTop + Math.max(report.subjects.length, 10) * rowHeight + 70;
 
   const rows = report.subjects
     .map((item, index) => {
-      const y = tableTop + (index + 1) * rowHeight;
+      const y = tableTop + index * rowHeight;
+      const palette = getGradePalette(item.grade);
       return `
-        <text x="70" y="${y}" ${cellTextStyle()}>${index + 1}</text>
-        <text x="125" y="${y}" ${cellTextStyle()}>${esc(item.subject)}</text>
-        <text x="620" y="${y}" ${cellTextStyle("middle")}>${item.classWork}</text>
-        <text x="740" y="${y}" ${cellTextStyle("middle")}>${item.examScore}</text>
-        <text x="860" y="${y}" ${cellTextStyle("middle")}>${item.total}</text>
-        <text x="980" y="${y}" ${cellTextStyle("middle")}>${esc(item.grade)}</text>
-        <text x="1095" y="${y}" ${cellTextStyle("middle")}>${esc(item.remark)}</text>
+        <rect x="58" y="${y}" width="1124" height="${rowHeight}" fill="#ffffff"/>
+        <text x="80" y="${y + 29}" ${textStyle(18, 600)}>${esc(item.subject)}</text>
+        <text x="660" y="${y + 29}" ${textStyle(17, 500, "middle")}>${item.classWork}</text>
+        <text x="770" y="${y + 29}" ${textStyle(17, 500, "middle")}>${item.examScore}</text>
+        <text x="880" y="${y + 29}" ${textStyle(17, 500, "middle")}>${item.total}</text>
+        <rect x="930" y="${y + 8}" width="78" height="30" rx="15" fill="${palette.bg}" stroke="${palette.border}"/>
+        <text x="969" y="${y + 28}" ${textStyle(15, 700, "middle", palette.text)}>${esc(item.grade)}</text>
+        <text x="1090" y="${y + 29}" ${textStyle(16, 500, "middle")}>${esc(item.remark)}</text>
       `;
     })
     .join("");
 
-  const rowLines = Array.from({ length: maxRows + 1 }, (_, index) => {
-    const y = tableTop - 18 + index * rowHeight;
-    return `<line x1="50" y1="${y}" x2="1190" y2="${y}" ${lineStyle()}/>`;
-  }).join("");
+  const behaviourRows = report.behaviourRatings
+    .map(
+      (item, index) => `
+        <rect x="${58 + (index % 2) * 560}" y="${behaviourTop + Math.floor(index / 2) * 54}" width="530" height="40" rx="18" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="${84 + (index % 2) * 560}" y="${behaviourTop + Math.floor(index / 2) * 54 + 25}" ${textStyle(15, 600, "start", "#334155")}>${esc(item.label)}</text>
+        <text x="${530 + (index % 2) * 560}" y="${behaviourTop + Math.floor(index / 2) * 54 + 25}" ${textStyle(15, 700, "end", "#0f172a")}>${esc(item.rating || "Not rated")}</text>
+      `,
+    )
+    .join("");
 
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Student report card">
-      <rect width="100%" height="100%" fill="#fff"/>
-      <rect x="30" y="30" width="1180" height="${height - 60}" fill="#fff" stroke="#000" stroke-width="2"/>
-      <g opacity="0.12" transform="rotate(-14 620 480)">
-        <circle cx="620" cy="480" r="190" fill="#dcfce7" stroke="#166534" stroke-width="7"/>
-        <circle cx="620" cy="480" r="154" fill="none" stroke="#166534" stroke-width="4" stroke-dasharray="10 8"/>
-        <text x="620" y="412" ${textStyle(18, 700, "middle", "#14532d", "4px")}>OFFICIAL STAMP</text>
-        <text x="620" y="452" ${textStyle(28, 700, "middle", "#14532d")}>${esc(report.schoolName.toUpperCase())}</text>
-        <text x="620" y="488" ${textStyle(14, 700, "middle", "#14532d", "1.6px")}>EDUCATION FOR SUCCESS AND PEACE</text>
-        <text x="620" y="524" ${textStyle(11, 700, "middle", "#14532d", "2px")}>GENERATED ON</text>
-        <text x="620" y="552" ${textStyle(13, 600, "middle", "#14532d")}>${esc(generatedLabel)}</text>
-      </g>
-      <circle cx="1090" cy="112" r="82" fill="#f0fdf4" fill-opacity="0.96" stroke="#166534" stroke-opacity="0.7" stroke-width="4"/>
-      <circle cx="1090" cy="112" r="66" fill="none" stroke="#166534" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="6 4"/>
-      <text x="1090" y="76" ${textStyle(10, 700, "middle", "#14532d", "2px")}>OFFICIAL</text>
-      <text x="1090" y="91" ${textStyle(10, 700, "middle", "#14532d", "2px")}>STAMP</text>
-      <text x="1090" y="111" ${textStyle(13, 700, "middle", "#14532d")}>${esc(report.schoolName.toUpperCase())}</text>
-      <text x="1090" y="131" ${textStyle(7.6, 700, "middle", "#14532d", "0.6px")}>EDUCATION FOR SUCCESS</text>
-      <text x="1090" y="143" ${textStyle(7.6, 700, "middle", "#14532d", "0.6px")}>AND PEACE</text>
-      <text x="1090" y="160" ${textStyle(8, 600, "middle", "#14532d")}>${esc(generatedLabel)}</text>
-      <text x="620" y="60" ${textStyle(32, 700, "middle")}>${esc(report.schoolName.toUpperCase())}</text>
-      <text x="620" y="88" ${textStyle(16, 700, "middle")}>Education for Success and Peace</text>
-      <text x="620" y="112" ${textStyle(17, 400, "middle")}>08164039006, 08106565953</text>
-      <text x="620" y="138" ${textStyle(17, 400, "middle")}>STUDENT REPORT CARD</text>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <rect width="100%" height="100%" fill="#edf2f7"/>
+      <rect x="28" y="28" width="1184" height="1698" rx="34" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+      <rect x="58" y="58" width="1124" height="124" rx="30" fill="#0f172a"/>
+      <text x="92" y="112" ${textStyle(18, 700, "start", "#a7f3d0", "4px")}>DIVINE MISSION SCHOOL</text>
+      <text x="92" y="152" ${textStyle(36, 700, "start", "#ffffff")}>STUDENT REPORT CARD</text>
+      <text x="1090" y="112" ${textStyle(15, 600, "end", "#d1fae5")}>A4 FORMAT</text>
+      <text x="1090" y="148" ${textStyle(17, 500, "end", "#ffffff")}>${esc(report.term)} • ${esc(report.sessionLabel)}</text>
 
-      <text x="60" y="175" ${textStyle(17, 400)}>Student Name: ${esc(report.studentName)}</text>
-      <text x="760" y="175" ${textStyle(17, 400)}>DMS No: ${esc(report.studentDmsNumber || "-")}</text>
-      <text x="60" y="205" ${textStyle(17, 400)}>Gender: ${esc(report.gender || "-")}</text>
-      <text x="360" y="205" ${textStyle(17, 400)}>Class: ${esc(report.className)}</text>
-      <text x="760" y="205" ${textStyle(17, 400)}>Teacher: ${esc(report.teacherName || "-")}</text>
-      <text x="60" y="235" ${textStyle(17, 400)}>Term: ${esc(report.term)}</text>
-      <text x="360" y="235" ${textStyle(17, 400)}>Session: ${esc(report.sessionLabel)}</text>
-      <text x="760" y="235" ${textStyle(17, 400)}>Attendance: ${esc(String(report.attendanceDays ?? "-"))}</text>
-      <text x="60" y="265" ${textStyle(17, 400)}>No. of Subjects: ${report.subjectCount}</text>
-      <text x="360" y="265" ${textStyle(17, 400)}>Total Score: ${report.totalObtained}</text>
-      <text x="600" y="265" ${textStyle(17, 400)}>Average: ${report.average.toFixed(2)}%</text>
-      <text x="900" y="265" ${textStyle(17, 400)}>Next Term Begins: ${esc(report.nextTermBegins || "-")}</text>
-      <text x="900" y="295" ${textStyle(17, 400)}>Resumption Date: ${esc(report.resumptionDate || "-")}</text>
+      <rect x="58" y="214" width="540" height="170" rx="28" fill="#f8fafc" stroke="#cbd5e1"/>
+      <rect x="642" y="214" width="540" height="170" rx="28" fill="#f8fafc" stroke="#cbd5e1"/>
+      ${detailLine(92, 258, "Student", report.studentName)}
+      ${detailLine(92, 296, "DMS Number", report.studentDmsNumber || "N/A")}
+      ${detailLine(92, 334, "Class", report.className)}
+      ${detailLine(92, 372, "Gender", report.gender || "Not provided")}
+      ${detailLine(676, 258, "Attendance", String(report.attendanceDays ?? "-"))}
+      ${detailLine(676, 296, "Teacher", report.teacherName || "Class Teacher")}
+      ${detailLine(676, 334, "Next Term", report.nextTermBegins || "-")}
+      ${detailLine(676, 372, "Resumption", report.resumptionDate || "-")}
 
-      <line x1="50" y1="320" x2="1190" y2="320" ${lineStyle()}/>
-      <text x="70" y="337" ${textStyle(16, 700)}>S/N</text>
-      <text x="125" y="337" ${textStyle(16, 700)}>Subject</text>
-      <text x="620" y="337" ${textStyle(16, 700, "middle")}>CA</text>
-      <text x="740" y="337" ${textStyle(16, 700, "middle")}>Exam</text>
-      <text x="860" y="337" ${textStyle(16, 700, "middle")}>Total</text>
-      <text x="980" y="337" ${textStyle(16, 700, "middle")}>Grade</text>
-      <text x="1095" y="337" ${textStyle(16, 700, "middle")}>Remark</text>
-      ${rowLines}
-      <line x1="100" y1="255" x2="100" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
-      <line x1="580" y1="255" x2="580" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
-      <line x1="680" y1="255" x2="680" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
-      <line x1="800" y1="255" x2="800" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
-      <line x1="920" y1="255" x2="920" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
-      <line x1="1040" y1="255" x2="1040" y2="${tableTop - 18 + maxRows * rowHeight}" ${lineStyle()}/>
+      <text x="58" y="420" ${textStyle(16, 700, "start", "#334155", "2px")}>ACADEMIC PERFORMANCE</text>
+      <rect x="58" y="${tableTop - 44}" width="1124" height="44" rx="18" fill="#e2e8f0"/>
+      <text x="80" y="${tableTop - 16}" ${textStyle(15, 700, "start", "#334155")}>Subject</text>
+      <text x="660" y="${tableTop - 16}" ${textStyle(15, 700, "middle", "#334155")}>CA</text>
+      <text x="770" y="${tableTop - 16}" ${textStyle(15, 700, "middle", "#334155")}>Exam</text>
+      <text x="880" y="${tableTop - 16}" ${textStyle(15, 700, "middle", "#334155")}>Total</text>
+      <text x="969" y="${tableTop - 16}" ${textStyle(15, 700, "middle", "#334155")}>Grade</text>
+      <text x="1090" y="${tableTop - 16}" ${textStyle(15, 700, "middle", "#334155")}>Remark</text>
       ${rows}
 
-      <text x="60" y="${height - 190}" ${textStyle(16, 700)}>Teacher's Comment</text>
-      <text x="60" y="${height - 160}" ${textStyle(17, 400)}>${esc(report.teacherComment)}</text>
-      <text x="60" y="${height - 110}" ${textStyle(16, 700)}>Principal's Comment</text>
-      <text x="60" y="${height - 80}" ${textStyle(17, 400)}>${esc(report.principalComment)}</text>
-      <text x="60" y="${height - 42}" ${textStyle(30, 600, "start", "#111827")}>${esc(
-        makeSignature(report.teacherName || "Class Teacher"),
-      )}</text>
-      <text x="830" y="${height - 42}" ${textStyle(30, 600, "start", "#111827")}>${esc(
-        makeSignature("Divine Mission School"),
-      )}</text>
-      <line x1="60" y1="${height - 24}" x2="370" y2="${height - 24}" ${lineStyle()}/>
-      <line x1="830" y1="${height - 24}" x2="1140" y2="${height - 24}" ${lineStyle()}/>
-      <text x="60" y="${height - 2}" ${textStyle(12, 700, "start", "#475569", "1.4px")}>CLASS TEACHER</text>
-      <text x="60" y="${height + 16}" ${textStyle(13, 400, "start", "#111827")}>${esc(
-        report.teacherName || "Class Teacher",
-      )}</text>
-      <text x="60" y="${height + 34}" ${textStyle(11, 400, "start", "#475569")}>Signed ${esc(
-        generatedLabel,
-      )}</text>
-      <text x="830" y="${height - 2}" ${textStyle(12, 700, "start", "#475569", "1.4px")}>PRINCIPAL</text>
-      <text x="830" y="${height + 16}" ${textStyle(13, 400, "start", "#111827")}>Divine Mission School</text>
-      <text x="830" y="${height + 34}" ${textStyle(11, 400, "start", "#475569")}>Signed ${esc(
-        generatedLabel,
-      )}</text>
+      <rect x="58" y="${behaviourTop - 28}" width="1124" height="170" rx="28" fill="#ffffff" stroke="#cbd5e1"/>
+      <text x="82" y="${behaviourTop - 4}" ${textStyle(16, 700, "start", "#334155", "2px")}>BEHAVIOUR RATINGS</text>
+      ${behaviourRows}
+
+      <rect x="58" y="${behaviourTop + 180}" width="540" height="180" rx="28" fill="#f8fafc" stroke="#cbd5e1"/>
+      <rect x="642" y="${behaviourTop + 180}" width="540" height="180" rx="28" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="82" y="${behaviourTop + 214}" ${textStyle(15, 700, "start", "#334155", "2px")}>TEACHER'S COMMENT</text>
+      <text x="82" y="${behaviourTop + 254}" ${textStyle(17, 500, "start", "#334155")}>${esc(report.teacherComment)}</text>
+      <text x="666" y="${behaviourTop + 214}" ${textStyle(15, 700, "start", "#334155", "2px")}>PRINCIPAL'S COMMENT</text>
+      <text x="666" y="${behaviourTop + 254}" ${textStyle(17, 500, "start", "#334155")}>${esc(report.principalComment)}</text>
+
+      ${signatureBlock(58, behaviourTop + 392, "Class Teacher", report.teacherName || "Class Teacher", report.teacherSignature)}
+      ${signatureBlock(642, behaviourTop + 392, "Principal", report.schoolName, report.principalSignature)}
+
+      <rect x="58" y="1548" width="1124" height="112" rx="28" fill="#0f172a"/>
+      <text x="92" y="1600" ${textStyle(18, 600, "start", "#ffffff")}>Subjects: ${report.subjectCount}</text>
+      <text x="400" y="1600" ${textStyle(18, 600, "start", "#ffffff")}>Total Score: ${report.totalObtained}</text>
+      <text x="760" y="1600" ${textStyle(18, 700, "start", "#a7f3d0")}>Average: ${report.average.toFixed(2)}%</text>
+      <text x="92" y="1640" ${textStyle(14, 500, "start", "#cbd5e1")}>Generated from the Divine Mission School CBT examination system.</text>
     </svg>
+  `;
+}
+
+function signatureBlock(
+  x: number,
+  y: number,
+  role: string,
+  name: string,
+  signature?: string,
+) {
+  return `
+    <rect x="${x}" y="${y}" width="540" height="180" rx="28" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="${x + 24}" y="${y + 34}" ${textStyle(15, 700, "start", "#334155", "2px")}>${esc(role.toUpperCase())}</text>
+    ${
+      signature
+        ? `<image href="${signature}" x="${x + 24}" y="${y + 46}" width="220" height="72" preserveAspectRatio="xMinYMid meet"/>`
+        : `<text x="${x + 24}" y="${y + 94}" ${textStyle(16, 500, "start", "#94a3b8")}>No signature added</text>`
+    }
+    <line x1="${x + 24}" y1="${y + 124}" x2="${x + 240}" y2="${y + 124}" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="${x + 24}" y="${y + 152}" ${textStyle(16, 600, "start", "#0f172a")}>${esc(name)}</text>
+  `;
+}
+
+function detailLine(x: number, y: number, label: string, value: string) {
+  return `
+    <text x="${x}" y="${y}" ${textStyle(13, 700, "start", "#64748b", "1.8px")}>${esc(label.toUpperCase())}</text>
+    <text x="${x}" y="${y + 24}" ${textStyle(20, 600, "start", "#0f172a")}>${esc(value)}</text>
   `;
 }
 
 function textStyle(
   size: number,
   weight: number,
-  anchor?: "start" | "middle" | "end",
+  anchor: "start" | "middle" | "end" = "start",
   fill = "#000",
   letterSpacing?: string,
 ) {
@@ -136,19 +135,11 @@ function textStyle(
     `font-size="${size}"`,
     `font-weight="${weight}"`,
     `fill="${fill}"`,
-    anchor ? `text-anchor="${anchor}"` : "",
+    `text-anchor="${anchor}"`,
     letterSpacing ? `letter-spacing="${letterSpacing}"` : "",
   ]
     .filter(Boolean)
     .join(" ");
-}
-
-function cellTextStyle(anchor?: "start" | "middle" | "end") {
-  return `${textStyle(15, 400, anchor)} dominant-baseline="middle"`;
-}
-
-function lineStyle() {
-  return 'stroke="#000" stroke-width="1" shape-rendering="crispEdges"';
 }
 
 export async function renderReportCardPdf(report: ReportCardView): Promise<Uint8Array> {
@@ -157,25 +148,22 @@ export async function renderReportCardPdf(report: ReportCardView): Promise<Uint8
 
 function buildReportCardPdf(report: ReportCardView): Uint8Array {
   const pageWidth = 842;
+  const pageHeight = 1191;
   const rowHeight = 22;
-  const tableTop = 265;
-  const maxRows = Math.max(report.subjects.length, 10);
-  const pageHeight = tableTop + maxRows * rowHeight + 250;
-  const generatedLabel = new Intl.DateTimeFormat("en-NG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(report.generatedAt);
+  const tableTop = 255;
+  const behaviourTop = tableTop + Math.max(report.subjects.length, 10) * rowHeight + 50;
   const header = Buffer.from("%PDF-1.4\n%\xFF\xFF\xFF\xFF\n", "binary");
   const parts: Buffer[] = [header];
   const offsets: number[] = [0];
   let length = header.length;
 
   const addObject = (objectNumber: number, body: Buffer | string) => {
-    const header = Buffer.from(`${objectNumber} 0 obj\n`);
-    const footer = Buffer.from(`\nendobj\n`);
-    const bodyBuffer = typeof body === "string" ? Buffer.from(body) : body;
+    const objectBuffer = Buffer.concat([
+      Buffer.from(`${objectNumber} 0 obj\n`),
+      typeof body === "string" ? Buffer.from(body) : body,
+      Buffer.from("\nendobj\n"),
+    ]);
     offsets[objectNumber] = length;
-    const objectBuffer = Buffer.concat([header, bodyBuffer, footer]);
     parts.push(objectBuffer);
     length += objectBuffer.length;
   };
@@ -183,146 +171,88 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   const top = (value: number) => pageHeight - value;
   const line = (x1: number, y1: number, x2: number, y2: number) =>
     `${x1.toFixed(2)} ${top(y1).toFixed(2)} m ${x2.toFixed(2)} ${top(y2).toFixed(2)} l S`;
-  const circle = (cx: number, cy: number, radius: number) => {
-    const c = 0.552284749831 * radius;
-    const y = top(cy);
-    return [
-      `${(cx + radius).toFixed(2)} ${y.toFixed(2)} m`,
-      `${(cx + radius).toFixed(2)} ${(y + c).toFixed(2)} ${(cx + c).toFixed(2)} ${(y + radius).toFixed(2)} ${cx.toFixed(2)} ${(y + radius).toFixed(2)} c`,
-      `${(cx - c).toFixed(2)} ${(y + radius).toFixed(2)} ${(cx - radius).toFixed(2)} ${(y + c).toFixed(2)} ${(cx - radius).toFixed(2)} ${y.toFixed(2)} c`,
-      `${(cx - radius).toFixed(2)} ${(y - c).toFixed(2)} ${(cx - c).toFixed(2)} ${(y - radius).toFixed(2)} ${cx.toFixed(2)} ${(y - radius).toFixed(2)} c`,
-      `${(cx + c).toFixed(2)} ${(y - radius).toFixed(2)} ${(cx + radius).toFixed(2)} ${(y - c).toFixed(2)} ${(cx + radius).toFixed(2)} ${y.toFixed(2)} c`,
-      "S",
-    ].join("\n");
-  };
-  const text = (
-    x: number,
-    y: number,
-    value: string,
-    size: number,
-    font: "F1" | "F2" = "F1",
-  ) =>
-    `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(2)} Tm (${pdfEsc(
-      value,
-    )}) Tj ET`;
-  const centeredText = (
-    x: number,
-    y: number,
-    value: string,
-    size: number,
-    font: "F1" | "F2" = "F1",
-  ) =>
-    `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(
-      2,
-    )} Tm ${textWidth(value, size, font).toFixed(2)} 0 Td (${pdfEsc(value)}) Tj ET`;
-  const stampCircle = (x: number, y: number, radius: number, dashed = false) =>
-    [
-      "0.09 0.33 0.18 RG",
-      dashed ? "[5 4] 0 d" : "[] 0 d",
-      dashed ? "1.6 w" : "2.4 w",
-      circle(x, y, radius),
-      "[] 0 d",
-      "1 w",
-      "0 0 0 RG",
-    ].join("\n");
-  const watermarkCircle = (x: number, y: number, radius: number, dashed = false) =>
-    [
-      "0.82 0.93 0.85 RG",
-      dashed ? "[8 6] 0 d" : "[] 0 d",
-      dashed ? "2.2 w" : "4 w",
-      circle(x, y, radius),
-      "[] 0 d",
-      "1 w",
-      "0 0 0 RG",
-    ].join("\n");
+  const rect = (x: number, y: number, w: number, h: number) =>
+    `${x.toFixed(2)} ${top(y + h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re S`;
+  const text = (x: number, y: number, value: string, size: number, font: "F1" | "F2" = "F1") =>
+    `BT /${font} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(2)} Tm (${pdfEsc(value)}) Tj ET`;
 
   const contentParts = [
+    "0.94 0.96 0.98 rg",
+    "0 0 842 1191 re f",
     "0 0 0 RG",
-    "0 0 0 rg",
     "1 w",
-    line(20, 20, pageWidth - 20, 20),
-    line(pageWidth - 20, 20, pageWidth - 20, pageHeight - 20),
-    line(pageWidth - 20, pageHeight - 20, 20, pageHeight - 20),
-    line(20, pageHeight - 20, 20, 20),
-    text(245, 48, report.schoolName.toUpperCase(), 20, "F2"),
-    text(292, 70, "Education for Success and Peace", 11, "F2"),
-    text(315, 88, "08164039006, 08106565953", 11),
-    text(325, 108, "STUDENT REPORT CARD", 11),
-    watermarkCircle(421, 405, 132),
-    watermarkCircle(421, 405, 108, true),
-    centeredText(421, 360, "OFFICIAL STAMP", 11.5, "F2"),
-    centeredText(421, 387, report.schoolName.toUpperCase(), 16, "F2"),
-    centeredText(421, 411, "EDUCATION FOR SUCCESS AND PEACE", 8, "F2"),
-    centeredText(421, 434, "GENERATED ON", 7.5, "F2"),
-    centeredText(421, 451, generatedLabel, 8),
-    stampCircle(680, 74, 53),
-    stampCircle(680, 74, 41, true),
-    centeredText(680, 44, "OFFICIAL", 7, "F2"),
-    centeredText(680, 55, "STAMP", 7, "F2"),
-    centeredText(680, 70, report.schoolName.toUpperCase(), 8.2, "F2"),
-    centeredText(680, 84, "EDUCATION FOR", 5.4, "F2"),
-    centeredText(680, 93, "SUCCESS AND PEACE", 5.4, "F2"),
-    centeredText(680, 105, generatedLabel, 6.4),
-    text(40, 140, `Student Name: ${report.studentName}`, 11),
-    text(430, 140, `DMS No: ${report.studentDmsNumber || "-"}`, 11),
-    text(40, 162, `Gender: ${report.gender || "-"}`, 11),
-    text(220, 162, `Class: ${report.className}`, 11),
-    text(430, 162, `Teacher: ${report.teacherName || "-"}`, 11),
-    text(40, 184, `Term: ${report.term}`, 11),
-    text(220, 184, `Session: ${report.sessionLabel}`, 11),
-    text(430, 184, `Attendance: ${String(report.attendanceDays ?? "-")}`, 11),
-    text(40, 206, `No. of Subjects: ${String(report.subjectCount)}`, 11),
-    text(220, 206, `Total Score: ${String(report.totalObtained)}`, 11),
-    text(400, 206, `Average: ${report.average.toFixed(2)}%`, 11),
-    text(560, 206, `Next Term Begins: ${report.nextTermBegins || "-"}`, 11),
-    text(560, 226, `Resumption Date: ${report.resumptionDate || "-"}`, 11),
-    line(35, 245, pageWidth - 35, 245),
-    text(45, 260, "S/N", 10, "F2"),
-    text(90, 260, "Subject", 10, "F2"),
-    text(435, 260, "CA", 10, "F2"),
-    text(510, 260, "Exam", 10, "F2"),
-    text(590, 260, "Total", 10, "F2"),
-    text(665, 260, "Grade", 10, "F2"),
-    text(730, 260, "Remark", 10, "F2"),
-    line(70, 192, 70, tableTop + maxRows * rowHeight),
-    line(400, 192, 400, tableTop + maxRows * rowHeight),
-    line(475, 192, 475, tableTop + maxRows * rowHeight),
-    line(555, 192, 555, tableTop + maxRows * rowHeight),
-    line(635, 192, 635, tableTop + maxRows * rowHeight),
-    line(705, 192, 705, tableTop + maxRows * rowHeight),
+    rect(20, 20, 802, 1151),
+    "0.06 0.09 0.16 rg",
+    "40 1070 762 80 re f",
+    text(58, 1104, report.schoolName.toUpperCase(), 11, "F2"),
+    text(58, 1080, "STUDENT REPORT CARD", 20, "F2"),
+    text(640, 1104, "A4 FORMAT", 10, "F2"),
+    text(600, 1080, `${report.term} - ${report.sessionLabel}`, 10),
+    "0 0 0 rg",
+    rect(40, 900, 360, 120),
+    rect(442, 900, 360, 120),
+    text(56, 996, `Student: ${report.studentName}`, 11, "F2"),
+    text(56, 972, `DMS Number: ${report.studentDmsNumber || "N/A"}`, 11),
+    text(56, 948, `Class: ${report.className}`, 11),
+    text(56, 924, `Gender: ${report.gender || "Not provided"}`, 11),
+    text(458, 996, `Attendance: ${String(report.attendanceDays ?? "-")}`, 11, "F2"),
+    text(458, 972, `Teacher: ${report.teacherName || "Class Teacher"}`, 11),
+    text(458, 948, `Next Term: ${report.nextTermBegins || "-"}`, 11),
+    text(458, 924, `Resumption: ${report.resumptionDate || "-"}`, 11),
+    text(40, 870, "ACADEMIC PERFORMANCE", 10, "F2"),
+    rect(40, tableTop - 22, 762, 22),
+    text(50, tableTop - 7, "Subject", 9, "F2"),
+    text(470, tableTop - 7, "CA", 9, "F2"),
+    text(545, tableTop - 7, "Exam", 9, "F2"),
+    text(620, tableTop - 7, "Total", 9, "F2"),
+    text(695, tableTop - 7, "Grade", 9, "F2"),
+    text(750, tableTop - 7, "Remark", 9, "F2"),
   ];
 
-  for (let index = 0; index <= maxRows; index += 1) {
-    const y = tableTop + index * rowHeight;
-    contentParts.push(line(35, y, pageWidth - 35, y));
+  for (let index = 0; index <= Math.max(report.subjects.length, 10); index += 1) {
+    contentParts.push(line(40, tableTop + index * rowHeight, 802, tableTop + index * rowHeight));
   }
 
   report.subjects.forEach((item, index) => {
-    const y = tableTop + 16 + index * rowHeight;
-    contentParts.push(text(45, y, String(index + 1), 10));
-    contentParts.push(text(90, y, item.subject, 10));
-    contentParts.push(text(435, y, String(item.classWork), 10));
-    contentParts.push(text(510, y, String(item.examScore), 10));
-    contentParts.push(text(590, y, String(item.total), 10));
-    contentParts.push(text(665, y, item.grade, 10));
-    contentParts.push(text(730, y, item.remark, 10));
+    const y = tableTop + 15 + index * rowHeight;
+    contentParts.push(text(50, y, item.subject, 9));
+    contentParts.push(text(470, y, String(item.classWork), 9));
+    contentParts.push(text(545, y, String(item.examScore), 9));
+    contentParts.push(text(620, y, String(item.total), 9));
+    contentParts.push(text(695, y, item.grade, 9, "F2"));
+    contentParts.push(text(750, y, item.remark, 9));
   });
 
-  const commentTop = tableTop + maxRows * rowHeight + 35;
-  contentParts.push(text(40, commentTop, "Teacher's Comment", 10, "F2"));
-  contentParts.push(text(40, commentTop + 18, report.teacherComment, 10));
-  contentParts.push(text(40, commentTop + 50, "Principal's Comment", 10, "F2"));
-  contentParts.push(text(40, commentTop + 68, report.principalComment, 10));
-  contentParts.push(text(40, pageHeight - 84, makeSignature(report.teacherName || "Class Teacher"), 20));
-  contentParts.push(text(600, pageHeight - 84, makeSignature("Divine Mission School"), 20));
-  contentParts.push(line(40, pageHeight - 68, 250, pageHeight - 68));
-  contentParts.push(line(600, pageHeight - 68, 790, pageHeight - 68));
-  contentParts.push(text(40, pageHeight - 52, "CLASS TEACHER", 9, "F2"));
-  contentParts.push(text(40, pageHeight - 38, report.teacherName || "Class Teacher", 10));
-  contentParts.push(text(40, pageHeight - 22, `Signed ${generatedLabel}`, 8));
-  contentParts.push(text(600, pageHeight - 52, "PRINCIPAL", 9, "F2"));
-  contentParts.push(text(600, pageHeight - 38, "Divine Mission School", 10));
-  contentParts.push(text(600, pageHeight - 22, `Signed ${generatedLabel}`, 8));
+  contentParts.push(rect(40, behaviourTop, 762, 120));
+  contentParts.push(text(50, behaviourTop + 20, "BEHAVIOUR RATINGS", 10, "F2"));
+  report.behaviourRatings.forEach((item, index) => {
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const x = 56 + col * 370;
+    const y = behaviourTop + 46 + row * 24;
+    contentParts.push(text(x, y, `${item.label}: ${item.rating || "Not rated"}`, 9));
+  });
+
+  contentParts.push(rect(40, behaviourTop + 146, 360, 120));
+  contentParts.push(rect(442, behaviourTop + 146, 360, 120));
+  contentParts.push(text(50, behaviourTop + 168, "TEACHER'S COMMENT", 10, "F2"));
+  contentParts.push(text(50, behaviourTop + 194, report.teacherComment, 9));
+  contentParts.push(text(452, behaviourTop + 168, "PRINCIPAL'S COMMENT", 10, "F2"));
+  contentParts.push(text(452, behaviourTop + 194, report.principalComment, 9));
+  contentParts.push(rect(40, behaviourTop + 286, 360, 120));
+  contentParts.push(rect(442, behaviourTop + 286, 360, 120));
+  contentParts.push(text(50, behaviourTop + 308, "CLASS TEACHER", 10, "F2"));
+  contentParts.push(text(50, behaviourTop + 380, report.teacherName || "Class Teacher", 9));
+  contentParts.push(text(452, behaviourTop + 308, "PRINCIPAL", 10, "F2"));
+  contentParts.push(text(452, behaviourTop + 380, report.schoolName, 9));
+  contentParts.push(line(50, behaviourTop + 360, 220, behaviourTop + 360));
+  contentParts.push(line(452, behaviourTop + 360, 622, behaviourTop + 360));
+
+  contentParts.push("0.06 0.09 0.16 rg");
+  contentParts.push("40 60 762 70 re f");
+  contentParts.push(text(56, 100, `Subjects: ${report.subjectCount}`, 11, "F2"));
+  contentParts.push(text(240, 100, `Total Score: ${report.totalObtained}`, 11, "F2"));
+  contentParts.push(text(520, 100, `Average: ${report.average.toFixed(2)}%`, 11, "F2"));
 
   const contentStream = contentParts.join("\n");
 
@@ -330,9 +260,7 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   addObject(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
   addObject(
     3,
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(
-      2,
-    )}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
   );
   addObject(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   addObject(5, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
@@ -351,23 +279,9 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
     .join("\n");
 
   const trailer = `xref\n0 ${offsets.length}\n${xrefEntries}\ntrailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-
   return new Uint8Array(Buffer.concat([...parts, Buffer.from(trailer)]));
 }
 
 function pdfEsc(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-}
-
-function textWidth(value: string, size: number, font: "F1" | "F2") {
-  const factor = font === "F2" ? 0.285 : 0.27;
-  return -value.length * size * factor;
-}
-
-function makeSignature(value: string) {
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0]?.toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
 }

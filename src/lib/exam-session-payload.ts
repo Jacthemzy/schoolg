@@ -21,6 +21,7 @@ export type ExamSessionPayload = {
     submittedAt?: string;
     readingEndsAt?: string;
     examEndsAt?: string;
+    graceEndsAt?: string;
     answersCount: number;
   };
   phase: ExamPhase;
@@ -106,6 +107,7 @@ export function normalizeExamSessionPayload(
       submittedAt: toOptionalString(attempt.submittedAt),
       readingEndsAt: toOptionalString(attempt.readingEndsAt),
       examEndsAt: toOptionalString(attempt.examEndsAt),
+      graceEndsAt: toOptionalString(attempt.graceEndsAt),
       answersCount: Math.max(0, toPositiveInteger(attempt.answersCount, 0)),
     },
     phase: getValidExamPhase(

@@ -24,7 +24,7 @@ export async function GET(
     );
   }
 
-  const { attempt, exam, phase, currentQuestion, questionsCount } = sessionState;
+  const { attempt, exam, phase, currentQuestion, questionsCount, graceEndsAt } = sessionState;
 
   return NextResponse.json({
     exam: {
@@ -46,6 +46,7 @@ export async function GET(
       submittedAt: attempt.submittedAt?.toISOString(),
       readingEndsAt: attempt.readingEndsAt?.toISOString(),
       examEndsAt: attempt.examEndsAt?.toISOString(),
+      graceEndsAt: graceEndsAt ? new Date(graceEndsAt).toISOString() : undefined,
       answersCount: attempt.answers.length,
     },
     phase: getValidExamPhase(phase),

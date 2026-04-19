@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
 import {
   buildReportCardView,
+  normalizeBehaviourRatings,
   normalizeReportSubject,
   type ReportCardRow,
 } from "@/lib/report-card";
@@ -102,6 +103,8 @@ export async function POST(request: Request) {
   const gender = String(body.gender ?? "").trim();
   const teacherName = String(body.teacherName ?? "").trim();
   const resumptionDate = String(body.resumptionDate ?? "").trim();
+  const teacherSignature = String(body.teacherSignature ?? "").trim();
+  const principalSignature = String(body.principalSignature ?? "").trim();
 
   if (!Types.ObjectId.isValid(studentId) || !className || !term || !sessionLabel) {
     return NextResponse.json(
@@ -140,6 +143,12 @@ export async function POST(request: Request) {
       ) * 100,
     ) / 100;
 
+  const behaviourRatings = normalizeBehaviourRatings(
+    Array.isArray(body.behaviourRatings)
+      ? (body.behaviourRatings as Array<Record<string, unknown>>)
+      : undefined,
+  );
+
   const reportCard = await ReportCard.findOneAndUpdate(
     { studentId, className, term, sessionLabel },
     {
@@ -156,8 +165,11 @@ export async function POST(request: Request) {
       teacherName: teacherName || undefined,
       subjects,
       average,
+      behaviourRatings,
       teacherComment: String(body.teacherComment ?? "").trim() || undefined,
       principalComment: String(body.principalComment ?? "").trim() || undefined,
+      teacherSignature: teacherSignature || undefined,
+      principalSignature: principalSignature || undefined,
     },
     {
       new: true,

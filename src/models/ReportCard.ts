@@ -9,6 +9,12 @@ export interface IReportCardSubject {
   remark: string;
 }
 
+export interface IReportCardBehaviourRating {
+  key: string;
+  label: string;
+  rating: string;
+}
+
 export interface IReportCard {
   _id: Types.ObjectId;
   studentId: Types.ObjectId;
@@ -24,8 +30,11 @@ export interface IReportCard {
   teacherName?: string;
   subjects: IReportCardSubject[];
   average: number;
+  behaviourRatings: IReportCardBehaviourRating[];
   teacherComment?: string;
   principalComment?: string;
+  teacherSignature?: string;
+  principalSignature?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +47,15 @@ const ReportCardSubjectSchema = new Schema<IReportCardSubject>(
     total: { type: Number, required: true, default: 0 },
     grade: { type: String, required: true, default: "F" },
     remark: { type: String, required: true, default: "Fail" },
+  },
+  { _id: false },
+);
+
+const ReportCardBehaviourRatingSchema = new Schema<IReportCardBehaviourRating>(
+  {
+    key: { type: String, required: true },
+    label: { type: String, required: true },
+    rating: { type: String, required: true, default: "" },
   },
   { _id: false },
 );
@@ -60,8 +78,14 @@ const ReportCardSchema = new Schema<IReportCard>(
       default: [],
     },
     average: { type: Number, required: true, default: 0 },
+    behaviourRatings: {
+      type: [ReportCardBehaviourRatingSchema],
+      default: [],
+    },
     teacherComment: { type: String },
     principalComment: { type: String },
+    teacherSignature: { type: String },
+    principalSignature: { type: String },
   },
   {
     timestamps: true,

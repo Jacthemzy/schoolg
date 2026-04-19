@@ -6,6 +6,8 @@ import { Question, type IQuestion } from "@/models/Question";
 import { Result } from "@/models/Result";
 import { User } from "@/models/User";
 
+const EXAM_RECOVERY_GRACE_PERIOD_MS = 5 * 60_000;
+
 function normalizeKeyword(value: string) {
   return value.trim().toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -193,8 +195,9 @@ export async function getAttemptSession(studentId: string, examId: string) {
     ? new Date(attempt.readingEndsAt).getTime()
     : null;
   const examEndsAt = attempt.examEndsAt ? new Date(attempt.examEndsAt).getTime() : null;
+  const graceEndsAt = examEndsAt ? examEndsAt + EXAM_RECOVERY_GRACE_PERIOD_MS : null;
 
-  if (attempt.status !== "submitted" && examEndsAt && now >= examEndsAt) {
+  if (attempt.status !== "submitted" && graceEndsAt && now >= graceEndsAt) {
     const finalized = await finalizeAttempt(studentId, examId);
     if (!finalized) return null;
     return getAttemptSession(studentId, examId);
@@ -229,6 +232,7 @@ export async function getAttemptSession(studentId: string, examId: string) {
     exam,
     questionsCount: questions.length,
     phase,
-    currentQuestion,
+      currentQuestion,
+      graceEndsAt,
   };
 }

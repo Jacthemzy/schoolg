@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
 import { Question } from "@/models/Question";
+import { Result } from "@/models/Result";
 import { requireRole } from "@/lib/server/auth";
 
 export async function GET(
@@ -143,4 +144,30 @@ export async function POST(
     },
     { status: 201 },
   );
+}
+
+export async function DELETE(
+  _: Request,
+  context: { params: Promise<{ examId: string }> },
+) {
+  const auth = await requireRole("admin");
+  if (!auth.ok) return auth.response;
+
+  const { examId } = await context.params;
+
+  if (!Types.ObjectId.isValid(examId)) {
+    return NextResponse.json({ error: "Invalid exam id." }, { status: 400 });
+  }
+
+  await connectMongoose();
+  const [questionResult, resultCleanup] = await Promise.all([
+    Question.deleteMany({ examId }),
+    Result.deleteMany({ examId }),
+  ]);
+
+  return NextResponse.json({
+    success: true,
+    deletedQuestions: questionResult.deletedCount ?? 0,
+    deletedResults: resultCleanup.deletedCount ?? 0,
+  });
 }

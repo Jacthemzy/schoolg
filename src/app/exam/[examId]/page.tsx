@@ -91,6 +91,9 @@ export default async function ExamPage({
       submittedAt: sessionState.attempt.submittedAt?.toISOString(),
       readingEndsAt: sessionState.attempt.readingEndsAt?.toISOString(),
       examEndsAt: sessionState.attempt.examEndsAt?.toISOString(),
+      graceEndsAt: sessionState.graceEndsAt
+        ? new Date(sessionState.graceEndsAt).toISOString()
+        : undefined,
       answersCount: sessionState.attempt.answers.length,
     },
     phase,

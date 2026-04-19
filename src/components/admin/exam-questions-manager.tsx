@@ -10,7 +10,13 @@ import {
   type CreateQuestionFormValues,
   type CreateQuestionInput,
 } from "@/lib/admin-schemas";
-import { useAdminQuestions, useCreateQuestion } from "@/hooks/use-admin-questions";
+import {
+  useAdminQuestions,
+  useCreateQuestion,
+  useDeleteQuestion,
+  useResetExamQuestions,
+  useUpdateQuestion,
+} from "@/hooks/use-admin-questions";
 import { useAdminExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
 
 type ParsedQuestion = {
@@ -31,10 +37,14 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   const updateStatus = useUpdateExamStatus();
   const { data: questions, isLoading } = useAdminQuestions(examId);
   const createQuestion = useCreateQuestion(examId);
+  const updateQuestion = useUpdateQuestion(examId);
+  const deleteQuestion = useDeleteQuestion(examId);
+  const resetExamQuestions = useResetExamQuestions(examId);
   const [bulkText, setBulkText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
 
   const form = useForm<CreateQuestionFormValues, undefined, CreateQuestionInput>({
     resolver: zodResolver(createQuestionSchema),
@@ -56,7 +66,12 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   });
 
   async function onSubmit(values: CreateQuestionInput) {
-    await createQuestion.mutateAsync(values);
+    if (editingQuestionId) {
+      await updateQuestion.mutateAsync({ questionId: editingQuestionId, values });
+      setEditingQuestionId(null);
+    } else {
+      await createQuestion.mutateAsync(values);
+    }
     form.reset({
       questionType: "text",
       answerType: "objective",
@@ -71,6 +86,28 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
       theoryKeywords: "",
       theorySampleAnswer: "",
       marks: 1,
+    });
+  }
+
+  function loadQuestionForEditing(question: NonNullable<typeof questions>[number]) {
+    setEditingQuestionId(question.id);
+    form.reset({
+      questionType: question.questionType,
+      answerType: question.answerType,
+      questionText: question.questionText,
+      questionImageUrl: question.questionImageUrl ?? "",
+      optionA: question.options[0] ?? "",
+      optionB: question.options[1] ?? "",
+      optionC: question.options[2] ?? "",
+      optionD: question.options[3] ?? "",
+      optionE: question.options[4] ?? "",
+      correctAnswer:
+        question.correctAnswer !== undefined
+          ? String(question.correctAnswer) as "0" | "1" | "2" | "3" | "4"
+          : "0",
+      theoryKeywords: question.theoryKeywords.join(", "),
+      theorySampleAnswer: question.theorySampleAnswer ?? "",
+      marks: question.marks,
     });
   }
 
@@ -172,7 +209,42 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
         </section>
       ) : null}
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Add Question</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">
+              {editingQuestionId ? "Edit Question" : "Add Question"}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fix wording mistakes, update marks, or create a fresh question.
+            </p>
+          </div>
+          {editingQuestionId ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingQuestionId(null);
+                form.reset({
+                  questionType: "text",
+                  answerType: "objective",
+                  questionText: "",
+                  questionImageUrl: "",
+                  optionA: "",
+                  optionB: "",
+                  optionC: "",
+                  optionD: "",
+                  optionE: "",
+                  correctAnswer: "0",
+                  theoryKeywords: "",
+                  theorySampleAnswer: "",
+                  marks: 1,
+                });
+              }}
+              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"
+            >
+              Cancel Edit
+            </button>
+          ) : null}
+        </div>
         <form className="mt-4 grid gap-4" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -311,10 +383,14 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
 
           <button
             type="submit"
-            disabled={createQuestion.isPending}
+            disabled={createQuestion.isPending || updateQuestion.isPending}
             className="inline-flex w-fit items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
           >
-            {createQuestion.isPending ? "Saving…" : "Add Question"}
+            {createQuestion.isPending || updateQuestion.isPending
+              ? "Saving..."
+              : editingQuestionId
+                ? "Update Question"
+                : "Add Question"}
           </button>
         </form>
       </section>
@@ -420,7 +496,29 @@ MARKS: 5`}
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Question Bank</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Question Bank</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Edit mistakes after upload or reset every question for this exam in one action.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(
+                "Reset all questions for this exam? Existing exam attempts and results for this exam will also be removed.",
+              );
+              if (confirmed) {
+                void resetExamQuestions.mutateAsync();
+              }
+            }}
+            disabled={resetExamQuestions.isPending}
+            className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+          >
+            {resetExamQuestions.isPending ? "Resetting..." : "Reset Exam Questions"}
+          </button>
+        </div>
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading questions…</p>
         ) : !questions?.length ? (
@@ -446,9 +544,34 @@ MARKS: 5`}
                       />
                     ) : null}
                   </div>
-                  <span className="rounded-full bg-muted px-3 py-1 text-xs">
-                    {question.answerType} • {question.marks} mark(s)
-                  </span>
+                  <div className="flex flex-col items-end gap-3">
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs">
+                      {question.answerType} • {question.marks} mark(s)
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => loadQuestionForEditing(question)}
+                        className="rounded-md border px-3 py-1 text-xs font-medium hover:bg-accent"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            "Delete this question from the bank?",
+                          );
+                          if (confirmed) {
+                            void deleteQuestion.mutateAsync(question.id);
+                          }
+                        }}
+                        className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 {question.answerType === "objective" ? (
                   <ul className="mt-4 grid gap-2 text-sm text-muted-foreground">

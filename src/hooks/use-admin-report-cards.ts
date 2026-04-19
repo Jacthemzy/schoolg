@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api";
-import type { ReportCardRow } from "@/lib/report-card";
+import type { BehaviourRating, ReportCardRow } from "@/lib/report-card";
 
 export type AdminReportCard = {
   id: string;
@@ -22,8 +22,11 @@ export type AdminReportCard = {
   totalObtained: number;
   totalPossible: number;
   average: number;
+  behaviourRatings: BehaviourRating[];
   teacherComment: string;
   principalComment: string;
+  teacherSignature?: string;
+  principalSignature?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -39,8 +42,11 @@ export type SaveReportCardInput = {
   gender?: string;
   teacherName?: string;
   subjects: ReportCardRow[];
+  behaviourRatings?: BehaviourRating[];
   teacherComment?: string;
   principalComment?: string;
+  teacherSignature?: string;
+  principalSignature?: string;
 };
 
 export function useAdminReportCards(params?: {
