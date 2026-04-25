@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import { StudentSignOutButton } from "@/components/auth/student-sign-out-button";
 import { connectMongoose } from "@/lib/mongoose";
 import { getAppSession } from "@/lib/server/auth";
@@ -23,6 +24,8 @@ export default async function DashboardPage() {
   ]);
 
   const resultMap = new Map(results.map((result) => [String(result.examId), result]));
+  const examAssessments = exams.filter((exam) => (exam.assessmentType ?? "exam") === "exam");
+  const testAssessments = exams.filter((exam) => (exam.assessmentType ?? "exam") === "test");
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#effcf5_45%,#ffffff_100%)]">
@@ -51,18 +54,16 @@ export default async function DashboardPage() {
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">Available Exams</h2>
+                <h2 className="text-xl font-semibold text-slate-950">Available Exams and Tests</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Start an active exam with the correct password. Reading time begins before the main timer.
+                  Start any active exam or test with the correct password. Reading time begins before the main timer.
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4">
-              {exams.length === 0 ? (
-                <p className="text-sm text-slate-600">No active exams are available for your class right now.</p>
-              ) : (
-                exams.map((exam) => {
+            <div className="mt-6 space-y-8">
+              <AssessmentGroup title="Exams" emptyMessage="No active exams are available for your class right now.">
+                {examAssessments.map((exam) => {
                   const attempt = resultMap.get(String(exam._id));
                   const isComplete = attempt?.status === "submitted";
 
@@ -101,8 +102,51 @@ export default async function DashboardPage() {
                       </div>
                     </article>
                   );
-                })
-              )}
+                })}
+              </AssessmentGroup>
+
+              <AssessmentGroup title="Tests" emptyMessage="No active tests are available for your class right now.">
+                {testAssessments.map((exam) => {
+                  const attempt = resultMap.get(String(exam._id));
+                  const isComplete = attempt?.status === "submitted";
+
+                  return (
+                    <article key={String(exam._id)} className="rounded-2xl border border-slate-200 p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-950">{exam.title}</h3>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {exam.subject} • Reading {exam.readingTime} min • Test {exam.duration} min
+                          </p>
+                          {exam.description ? (
+                            <p className="mt-3 text-sm leading-6 text-slate-700">{exam.description}</p>
+                          ) : null}
+                        </div>
+                        <div className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                          {isComplete ? "Completed" : attempt ? "Continue" : "Not Started"}
+                        </div>
+                      </div>
+                      <div className="mt-5">
+                        {isComplete ? (
+                          <Link
+                            href={`/results/${String(attempt?._id)}`}
+                            className="inline-flex items-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                          >
+                            View Result
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/exam/${String(exam._id)}`}
+                            className="inline-flex items-center rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                          >
+                            {attempt ? "Continue Test" : "Start Test"}
+                          </Link>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </AssessmentGroup>
             </div>
           </div>
 
@@ -158,5 +202,28 @@ export default async function DashboardPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+function AssessmentGroup({
+  title,
+  emptyMessage,
+  children,
+}: {
+  title: string;
+  emptyMessage: string;
+  children: ReactNode;
+}) {
+  const items = Array.isArray(children) ? children.filter(Boolean) : children ? [children] : [];
+  return (
+    <section>
+      <div className="mb-4 flex items-center gap-3">
+        <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
+        <span className="h-px flex-1 bg-slate-200" />
+      </div>
+      <div className="grid gap-4">
+        {items.length === 0 ? <p className="text-sm text-slate-600">{emptyMessage}</p> : items}
+      </div>
+    </section>
   );
 }

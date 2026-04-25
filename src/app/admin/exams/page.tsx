@@ -19,6 +19,7 @@ export default function AdminExamsPage() {
     defaultValues: {
       title: "",
       description: "",
+      assessmentType: "exam",
       subject: "",
       classTarget: "",
       readingTime: 5,
@@ -67,6 +68,17 @@ export default function AdminExamsPage() {
               rows={3}
               {...form.register("description")}
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium">Assessment Type</label>
+            <select
+              className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              {...form.register("assessmentType")}
+            >
+              <option value="exam">Exam</option>
+              <option value="test">Test</option>
+            </select>
           </div>
 
           <div>
@@ -164,6 +176,7 @@ export default function AdminExamsPage() {
               <thead className="border-b text-xs text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-4">Title</th>
+                  <th className="py-2 pr-4">Type</th>
                   <th className="py-2 pr-4">Subject</th>
                   <th className="py-2 pr-4">Class</th>
                   <th className="py-2 pr-4">Reading</th>
@@ -178,6 +191,11 @@ export default function AdminExamsPage() {
                 {exams.map((exam) => (
                   <tr key={exam.id} className="border-b last:border-0">
                     <td className="py-2 pr-4">{exam.title}</td>
+                    <td className="py-2 pr-4">
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        {exam.assessmentType === "test" ? "Test" : "Exam"}
+                      </span>
+                    </td>
                     <td className="py-2 pr-4">{exam.subject}</td>
                     <td className="py-2 pr-4">{exam.classTarget}</td>
                     <td className="py-2 pr-4">{exam.readingTime} min</td>

@@ -59,6 +59,7 @@ export default async function ExamPage({
         exam={{
           title: exam.title,
           description: exam.description ?? "",
+          assessmentType: exam.assessmentType ?? "exam",
           subject: exam.subject,
           classTarget: exam.classTarget,
           readingTime: exam.readingTime,
@@ -76,6 +77,7 @@ export default async function ExamPage({
       id: String(sessionState.exam._id),
       title: sessionState.exam.title,
       description: sessionState.exam.description ?? "",
+      assessmentType: sessionState.exam.assessmentType ?? "exam",
       subject: sessionState.exam.subject,
       classTarget: sessionState.exam.classTarget,
       readingTime: sessionState.exam.readingTime,

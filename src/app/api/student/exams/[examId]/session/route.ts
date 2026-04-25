@@ -31,6 +31,7 @@ export async function GET(
       id: String(exam._id),
       title: exam.title,
       description: exam.description ?? "",
+      assessmentType: exam.assessmentType ?? "exam",
       subject: exam.subject,
       classTarget: exam.classTarget,
       readingTime: exam.readingTime,

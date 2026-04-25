@@ -7,6 +7,7 @@ import type { CreateExamInput } from "@/lib/admin-schemas";
 export type AdminExam = {
   id: string;
   title: string;
+  assessmentType: "exam" | "test";
   subject: string;
   classTarget: string;
   readingTime: number;

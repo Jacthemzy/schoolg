@@ -235,6 +235,7 @@ export function ExamSessionClient({
     getTimeLeft(sessionData.attempt.examEndsAt) === 0 &&
     timeLeft > 0;
   const currentQuestion = sessionData.phase === "exam" ? sessionData.currentQuestion : null;
+  const assessmentLabel = sessionData.exam.assessmentType === "test" ? "Test" : "Exam";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
@@ -263,7 +264,7 @@ export function ExamSessionClient({
                 ? "Reading Time"
                 : isRecoveryWindow
                   ? "Recovery Window"
-                  : "Exam Timer"}
+                  : `${assessmentLabel} Timer`}
             </p>
             <p className="mt-1 text-2xl font-semibold">{formatTime(timeLeft)}</p>
           </div>
@@ -277,7 +278,7 @@ export function ExamSessionClient({
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-700">
             You are in reading mode. Answers are locked until the countdown ends. Once the
-            exam starts, questions will appear one at a time and you cannot go back to a
+            {sessionData.exam.assessmentType} starts, questions will appear one at a time and you cannot go back to a
             previous question.
           </p>
         </section>
@@ -372,7 +373,7 @@ export function ExamSessionClient({
               disabled={loading}
               className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
-              Submit Exam
+              {`Submit ${assessmentLabel}`}
             </button>
           </div>
         </section>

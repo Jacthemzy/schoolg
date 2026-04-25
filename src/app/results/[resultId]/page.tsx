@@ -86,13 +86,21 @@ export default async function ResultPage({
               {exam?.title ?? "Exam Result"}
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              {exam?.subject ?? "Subject"} • Submitted{" "}
+              {(exam?.assessmentType ?? "exam") === "test" ? "Test" : "Exam"} • {exam?.subject ?? "Subject"} • Submitted{" "}
               {result.submittedAt
                 ? new Date(result.submittedAt).toLocaleString()
                 : "in progress"}
             </p>
           </div>
-          {session.user.role === "student" ? <StudentSignOutButton /> : null}
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`/api/results/${String(result._id)}/script`}
+              className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Download Script
+            </a>
+            {session.user.role === "student" ? <StudentSignOutButton /> : null}
+          </div>
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">

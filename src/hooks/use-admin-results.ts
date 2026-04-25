@@ -11,6 +11,7 @@ export type AdminResult = {
   className: string;
   examId: string;
   examTitle: string;
+  assessmentType: "exam" | "test";
   subject: string;
   score: number;
   totalMarks: number;

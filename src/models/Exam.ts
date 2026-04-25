@@ -4,6 +4,7 @@ export interface IExam {
   _id: Types.ObjectId;
   title: string;
   description?: string;
+  assessmentType: "exam" | "test";
   subject: string;
   classTarget: string;
   readingTime: number;
@@ -17,6 +18,7 @@ export interface IExam {
 const ExamSchema = new Schema<IExam>({
   title: { type: String, required: true },
   description: { type: String },
+  assessmentType: { type: String, enum: ["exam", "test"], default: "exam" },
   subject: { type: String, required: true },
   classTarget: { type: String, required: true },
   readingTime: { type: Number, required: true },

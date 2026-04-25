@@ -16,6 +16,7 @@ export async function GET() {
     exams.map((exam) => ({
       id: String(exam._id),
       title: exam.title,
+      assessmentType: exam.assessmentType ?? "exam",
       subject: exam.subject,
       classTarget: exam.classTarget,
       readingTime: exam.readingTime,
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     {
       id: String(exam._id),
       title: exam.title,
+      assessmentType: exam.assessmentType ?? "exam",
       subject: exam.subject,
       classTarget: exam.classTarget,
       readingTime: exam.readingTime,

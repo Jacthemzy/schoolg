@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
         className: student?.className ?? "",
         examId: String(result.examId),
         examTitle: exam?.title ?? "Unknown exam",
+        assessmentType: exam?.assessmentType ?? "exam",
         subject: exam?.subject ?? "",
         score: result.score,
         totalMarks: result.totalMarks,

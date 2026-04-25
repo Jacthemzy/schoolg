@@ -27,6 +27,7 @@ export async function GET(
   return NextResponse.json({
     id: String(exam._id),
     title: exam.title,
+    assessmentType: exam.assessmentType ?? "exam",
     subject: exam.subject,
     classTarget: exam.classTarget,
     readingTime: exam.readingTime,
@@ -75,6 +76,7 @@ export async function PATCH(
   return NextResponse.json({
     id: String(exam._id),
     title: exam.title,
+    assessmentType: exam.assessmentType ?? "exam",
     subject: exam.subject,
     classTarget: exam.classTarget,
     readingTime: exam.readingTime,

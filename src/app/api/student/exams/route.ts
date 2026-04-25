@@ -25,6 +25,7 @@ export async function GET() {
       return {
         id: String(exam._id),
         title: exam.title,
+        assessmentType: exam.assessmentType ?? "exam",
         description: exam.description ?? "",
         subject: exam.subject,
         classTarget: exam.classTarget,

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const createExamSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
+  assessmentType: z.enum(["exam", "test"]).default("exam"),
   subject: z.string().min(1, "Subject is required"),
   classTarget: z.string().min(1, "Class is required"),
   readingTime: z.coerce.number().int().positive("Reading time must be > 0"),

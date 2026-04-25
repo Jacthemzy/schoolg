@@ -60,8 +60,9 @@ export function renderReportCardSvg(report: ReportCardView) {
       <rect width="100%" height="100%" fill="#edf2f7"/>
       <rect x="28" y="28" width="1184" height="1698" rx="34" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
       <rect x="58" y="58" width="1124" height="150" rx="30" fill="#0f172a"/>
-      <text x="92" y="114" ${textStyle(16, 700, "start", "#a7f3d0", "4px")}>EDUCATION FOR SUCCESS AND PEACE</text>
-      <text x="92" y="154" ${textStyle(34, 700, "start", "#ffffff")}>${esc(report.schoolName.toUpperCase())}</text>
+      <text x="92" y="102" ${textStyle(34, 700, "start", "#ffffff")}>${esc(report.schoolName.toUpperCase())}</text>
+      <text x="92" y="132" ${textStyle(15, 700, "start", "#a7f3d0", "3px")}>EDUCATION FOR SUCCESS AND PEACE</text>
+      <text x="92" y="156" ${textStyle(17, 500, "start", "#d1fae5")}>08164039006, 08106565953</text>
       <text x="92" y="190" ${textStyle(22, 600, "start", "#ffffff")}>STUDENT REPORT CARD</text>
       <text x="820" y="106" ${textStyle(14, 600, "start", "#d1fae5")}>Generated</text>
       <text x="820" y="134" ${textStyle(18, 700, "start", "#ffffff")}>${esc(generatedLabel)}</text>
@@ -249,8 +250,9 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
       circle(cx, cy, radius),
       "0.09 0.33 0.18 RG",
       circle(cx, cy, radius - 12),
-      text(cx - 24, cy - 18, "STAMP", 9, "F2", [0.09, 0.33, 0.18]),
-      text(cx - 32, cy + 4, "DMS", 12, "F2", [0.09, 0.33, 0.18]),
+      text(cx - 28, cy - 26, "OFFICIAL", 7, "F2", [0.09, 0.33, 0.18]),
+      text(cx - 18, cy - 12, "STAMP", 8, "F2", [0.09, 0.33, 0.18]),
+      text(cx - 36, cy + 6, "DMS", 14, "F2", [0.09, 0.33, 0.18]),
     ].join("\n");
 
   const contentParts = [
@@ -259,9 +261,10 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
     rectStroke(20, 20, 802, 1151),
 
     rectFill(40, 40, 762, 110, 0.06, 0.09, 0.16),
-    text(56, 78, "EDUCATION FOR SUCCESS AND PEACE", 11, "F2", [0.65, 0.95, 0.82]),
-    text(56, 104, report.schoolName.toUpperCase(), 20, "F2", [1, 1, 1]),
-    text(56, 128, "STUDENT REPORT CARD", 15, "F2", [1, 1, 1]),
+    text(56, 76, report.schoolName.toUpperCase(), 20, "F2", [1, 1, 1]),
+    text(56, 100, "EDUCATION FOR SUCCESS AND PEACE", 11, "F2", [0.65, 0.95, 0.82]),
+    text(56, 122, "08164039006, 08106565953", 10, "F1", [0.82, 0.98, 0.9]),
+    text(56, 142, "STUDENT REPORT CARD", 15, "F2", [1, 1, 1]),
     text(560, 78, "Generated", 9, "F2", [0.82, 0.98, 0.9]),
     text(560, 102, generatedLabel, 11, "F2", [1, 1, 1]),
     text(560, 126, `${report.term} - ${report.sessionLabel}`, 10, "F1", [1, 1, 1]),
@@ -300,10 +303,13 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
 
   report.subjects.forEach((item, index) => {
     const y = tableTop + 41 + index * rowHeight;
+    const palette = getGradePalette(item.grade);
+    const gradeRgb = hexToRgb(palette.bg);
     contentParts.push(text(52, y, item.subject, 9, "F2", [0.06, 0.09, 0.16]));
     contentParts.push(text(470, y, String(item.classWork), 9, "F1", [0.2, 0.25, 0.32]));
     contentParts.push(text(544, y, String(item.examScore), 9, "F1", [0.2, 0.25, 0.32]));
     contentParts.push(text(620, y, String(item.total), 9, "F1", [0.2, 0.25, 0.32]));
+    contentParts.push(rectFill(688, y - 12, 46, 15, gradeRgb[0], gradeRgb[1], gradeRgb[2]));
     contentParts.push(text(694, y, item.grade, 9, "F2", [0.06, 0.09, 0.16]));
     contentParts.push(text(748, y, item.remark, 9, "F1", [0.2, 0.25, 0.32]));
   });
@@ -379,6 +385,19 @@ function truncateText(value: string, length: number) {
   }
 
   return `${normalized.slice(0, Math.max(0, length - 3))}...`;
+}
+
+function hexToRgb(value: string): [number, number, number] {
+  const normalized = value.replace("#", "");
+  const full = normalized.length === 3
+    ? normalized.split("").map((char) => `${char}${char}`).join("")
+    : normalized;
+  const int = Number.parseInt(full, 16);
+  return [
+    ((int >> 16) & 255) / 255,
+    ((int >> 8) & 255) / 255,
+    (int & 255) / 255,
+  ];
 }
 
 function pdfEsc(value: string) {

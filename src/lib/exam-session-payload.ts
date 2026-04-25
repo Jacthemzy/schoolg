@@ -6,6 +6,7 @@ export type ExamSessionPayload = {
     id: string;
     title: string;
     description: string;
+    assessmentType: "exam" | "test";
     subject: string;
     classTarget: string;
     readingTime: number;
@@ -76,6 +77,10 @@ function getAnswerType(value: unknown): "objective" | "theory" {
   return value === "theory" ? "theory" : "objective";
 }
 
+function getAssessmentType(value: unknown): "exam" | "test" {
+  return value === "test" ? "test" : "exam";
+}
+
 export function normalizeExamSessionPayload(
   payload: ExamSessionPayload | Record<string, unknown>,
 ): ExamSessionPayload {
@@ -92,6 +97,7 @@ export function normalizeExamSessionPayload(
       id: String(exam.id ?? ""),
       title: String(exam.title ?? ""),
       description: String(exam.description ?? ""),
+      assessmentType: getAssessmentType(exam.assessmentType),
       subject: String(exam.subject ?? ""),
       classTarget: String(exam.classTarget ?? ""),
       readingTime: Number(exam.readingTime ?? 0),
