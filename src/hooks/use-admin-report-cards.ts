@@ -37,7 +37,6 @@ export type SaveReportCardInput = {
   term: string;
   sessionLabel: string;
   attendanceDays?: number | string;
-  nextTermBegins?: string;
   resumptionDate?: string;
   gender?: string;
   teacherName?: string;

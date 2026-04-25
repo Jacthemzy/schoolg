@@ -50,7 +50,6 @@ export function ReportCardManager() {
   const [term, setTerm] = useState("First Term");
   const [sessionLabel, setSessionLabel] = useState("2025/2026");
   const [attendanceDays, setAttendanceDays] = useState("");
-  const [nextTermBegins, setNextTermBegins] = useState("");
   const [resumptionDate, setResumptionDate] = useState("");
   const [gender, setGender] = useState("");
   const [teacherName, setTeacherName] = useState("");
@@ -102,7 +101,6 @@ export function ReportCardManager() {
   function resetForm() {
     setEditingCardId(null);
     setAttendanceDays("");
-    setNextTermBegins("");
     setResumptionDate("");
     setGender("");
     setTeacherName("");
@@ -147,8 +145,7 @@ export function ReportCardManager() {
     setTerm(card.term);
     setSessionLabel(card.sessionLabel);
     setAttendanceDays(card.attendanceDays ? String(card.attendanceDays) : "");
-    setNextTermBegins(card.nextTermBegins ?? "");
-    setResumptionDate(card.resumptionDate ?? "");
+    setResumptionDate(card.resumptionDate ?? card.nextTermBegins ?? "");
     setGender(card.gender ?? "");
     setTeacherName(card.teacherName ?? "");
     setRows(card.subjects.map((row) => computeRow(row)));
@@ -182,7 +179,6 @@ export function ReportCardManager() {
         term,
         sessionLabel,
         attendanceDays,
-        nextTermBegins,
         resumptionDate,
         gender,
         teacherName,
@@ -314,15 +310,7 @@ export function ReportCardManager() {
               onChange={(event) => setAttendanceDays(event.target.value)}
             />
           </Field>
-          <Field label="Next Term Begins">
-            <input
-              className="mt-1 w-full rounded-xl border bg-background px-3 py-2 text-sm"
-              value={nextTermBegins}
-              onChange={(event) => setNextTermBegins(event.target.value)}
-              placeholder="15/09/2026"
-            />
-          </Field>
-          <Field label="Resumption Date">
+          <Field label="School Resumes">
             <input
               className="mt-1 w-full rounded-xl border bg-background px-3 py-2 text-sm"
               value={resumptionDate}

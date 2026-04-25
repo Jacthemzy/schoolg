@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { connectMongoose } from "@/lib/mongoose";
 import { Exam } from "@/models/Exam";
+import { Question } from "@/models/Question";
+import { Result } from "@/models/Result";
 import { requireRole } from "@/lib/server/auth";
 
 export async function GET(
@@ -84,5 +86,36 @@ export async function PATCH(
     totalMarks: exam.totalMarks,
     isActive: exam.isActive,
     createdAt: exam.createdAt,
+  });
+}
+
+export async function DELETE(
+  _: Request,
+  context: { params: Promise<{ examId: string }> },
+) {
+  const auth = await requireRole("admin");
+  if (!auth.ok) return auth.response;
+
+  const { examId } = await context.params;
+
+  if (!Types.ObjectId.isValid(examId)) {
+    return NextResponse.json({ error: "Invalid exam id." }, { status: 400 });
+  }
+
+  await connectMongoose();
+  const [exam, questionCleanup, resultCleanup] = await Promise.all([
+    Exam.findByIdAndDelete(examId).lean(),
+    Question.deleteMany({ examId }),
+    Result.deleteMany({ examId }),
+  ]);
+
+  if (!exam) {
+    return NextResponse.json({ error: "Exam not found." }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    deletedQuestions: questionCleanup.deletedCount ?? 0,
+    deletedResults: resultCleanup.deletedCount ?? 0,
   });
 }

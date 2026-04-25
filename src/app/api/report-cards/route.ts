@@ -102,7 +102,9 @@ export async function POST(request: Request) {
   const attendanceDays = attendanceDaysValue ? Number(attendanceDaysValue) : undefined;
   const gender = String(body.gender ?? "").trim();
   const teacherName = String(body.teacherName ?? "").trim();
-  const resumptionDate = String(body.resumptionDate ?? "").trim();
+  const resumptionDate =
+    String(body.resumptionDate ?? "").trim() ||
+    String(body.nextTermBegins ?? "").trim();
   const teacherSignature = String(body.teacherSignature ?? "").trim();
   const principalSignature = String(body.principalSignature ?? "").trim();
 
@@ -160,7 +162,7 @@ export async function POST(request: Request) {
       sessionLabel,
       gender: gender || undefined,
       attendanceDays: Number.isFinite(attendanceDays) ? attendanceDays : undefined,
-      nextTermBegins: String(body.nextTermBegins ?? "").trim() || undefined,
+      nextTermBegins: undefined,
       resumptionDate: resumptionDate || undefined,
       teacherName: teacherName || undefined,
       subjects,

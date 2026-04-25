@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import type { CreateExamInput } from "@/lib/admin-schemas";
 
 export type AdminExam = {
@@ -58,6 +58,35 @@ export function useUpdateExamStatus() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: EXAMS_KEY });
       queryClient.invalidateQueries({ queryKey: EXAM_KEY(data.id) });
+    },
+  });
+}
+
+export function useDeleteExam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (examId: string) =>
+      apiDelete<{ success: boolean; deletedQuestions: number; deletedResults: number }>(
+        `/api/exams/${examId}`,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: EXAMS_KEY });
+    },
+  });
+}
+
+export function useResetExamContent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (examId: string) =>
+      apiDelete<{ success: boolean; deletedQuestions: number; deletedResults: number }>(
+        `/api/exams/${examId}/questions`,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: EXAMS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
     },
   });
 }

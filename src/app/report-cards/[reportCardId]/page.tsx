@@ -108,6 +108,7 @@ export default async function ReportCardPage({
                 <MetaItem label="Gender" value={view.gender || "Not provided"} />
                 <MetaItem label="Term" value={view.term} />
                 <MetaItem label="Session" value={view.sessionLabel} />
+                <MetaItem label="School Resumes" value={view.resumptionDate || "-"} />
                 <MetaItem label="Generated" value={generatedLabel} />
               </div>
             </div>

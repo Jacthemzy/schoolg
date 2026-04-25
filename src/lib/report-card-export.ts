@@ -1,3 +1,5 @@
+import sharp from "sharp";
+import { deflateSync } from "node:zlib";
 import { getGradePalette, type ReportCardView } from "@/lib/report-card";
 
 function esc(text: string) {
@@ -80,8 +82,7 @@ export function renderReportCardSvg(report: ReportCardView) {
       ${detailLine(92, 454, "Gender", report.gender || "Not provided")}
       ${detailLine(92, 494, "Attendance", String(report.attendanceDays ?? "-"))}
       ${detailLine(676, 414, "Teacher", report.teacherName || "Class Teacher")}
-      ${detailLine(676, 454, "Next Term", report.nextTermBegins || "-")}
-      ${detailLine(676, 494, "Resumption", report.resumptionDate || "-")}
+      ${detailLine(676, 454, "School Resumes", report.resumptionDate || "-")}
 
       <text x="58" y="470" ${textStyle(16, 700, "start", "#334155", "2px")}>ACADEMIC PERFORMANCE</text>
       <rect x="58" y="${tableTop - 42}" width="1124" height="42" rx="18" fill="#e2e8f0"/>
@@ -189,7 +190,7 @@ export async function renderReportCardPdf(report: ReportCardView): Promise<Uint8
   return buildReportCardPdf(report);
 }
 
-function buildReportCardPdf(report: ReportCardView): Uint8Array {
+async function buildReportCardPdf(report: ReportCardView): Promise<Uint8Array> {
   const pageWidth = 842;
   const pageHeight = 1191;
   const rowHeight = 24;
@@ -254,6 +255,16 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
       text(cx - 18, cy - 12, "STAMP", 8, "F2", [0.09, 0.33, 0.18]),
       text(cx - 36, cy + 6, "DMS", 14, "F2", [0.09, 0.33, 0.18]),
     ].join("\n");
+  const drawImage = (
+    name: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) =>
+    `q ${width.toFixed(2)} 0 0 ${height.toFixed(2)} ${x.toFixed(2)} ${top(y + height).toFixed(
+      2,
+    )} cm /${name} Do Q`;
 
   const contentParts = [
     rectFill(0, 0, pageWidth, pageHeight, 0.94, 0.96, 0.98),
@@ -284,8 +295,7 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
     text(56, 312, `Gender: ${report.gender || "Not provided"}`, 11, "F1", [0.2, 0.25, 0.32]),
     text(56, 338, `Attendance: ${String(report.attendanceDays ?? "-")}`, 11, "F1", [0.2, 0.25, 0.32]),
     text(458, 286, `Teacher: ${report.teacherName || "Class Teacher"}`, 11, "F2", [0.06, 0.09, 0.16]),
-    text(458, 312, `Next Term: ${report.nextTermBegins || "-"}`, 11, "F1", [0.2, 0.25, 0.32]),
-    text(458, 338, `Resumption: ${report.resumptionDate || "-"}`, 11, "F1", [0.2, 0.25, 0.32]),
+    text(458, 312, `School Resumes: ${report.resumptionDate || "-"}`, 11, "F1", [0.2, 0.25, 0.32]),
 
     text(40, tableTop - 20, "ACADEMIC PERFORMANCE", 10, "F2", [0.2, 0.25, 0.32]),
     rectFill(40, tableTop, 762, 24, 0.89, 0.91, 0.94),
@@ -351,18 +361,51 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
   contentParts.push(text(520, 1122, `Average: ${report.average.toFixed(2)}%`, 11, "F2", [0.65, 0.95, 0.82]));
 
   const contentStream = contentParts.join("\n");
+  const imageObjects: Array<{ objectNumber: number; body: Buffer | string }> = [];
+  const xObjectEntries: string[] = [];
+  let nextObjectNumber = 6;
+
+  const teacherSignatureImage = await buildPdfImageObject(
+    report.teacherSignature,
+    "SigTeacher",
+    nextObjectNumber,
+  );
+  if (teacherSignatureImage) {
+    imageObjects.push(...teacherSignatureImage.objects);
+    xObjectEntries.push(`${teacherSignatureImage.name} ${teacherSignatureImage.imageRef} 0 R`);
+    contentParts.push(drawImage(teacherSignatureImage.name, 52, behaviourTop + 300, 150, 32));
+    nextObjectNumber = teacherSignatureImage.nextObjectNumber;
+  }
+
+  const principalSignatureImage = await buildPdfImageObject(
+    report.principalSignature,
+    "SigPrincipal",
+    nextObjectNumber,
+  );
+  if (principalSignatureImage) {
+    imageObjects.push(...principalSignatureImage.objects);
+    xObjectEntries.push(`${principalSignatureImage.name} ${principalSignatureImage.imageRef} 0 R`);
+    contentParts.push(drawImage(principalSignatureImage.name, 454, behaviourTop + 300, 150, 32));
+    nextObjectNumber = principalSignatureImage.nextObjectNumber;
+  }
+
+  const finalContentStream = contentParts.join("\n");
+  const contentObjectNumber = nextObjectNumber;
 
   addObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
   addObject(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
   addObject(
     3,
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> ${
+      xObjectEntries.length ? `/XObject << /${xObjectEntries.join(" /")} >>` : ""
+    } >> /Contents ${contentObjectNumber} 0 R >>`,
   );
   addObject(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   addObject(5, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  imageObjects.forEach((item) => addObject(item.objectNumber, item.body));
   addObject(
-    6,
-    `<< /Length ${Buffer.byteLength(contentStream)} >>\nstream\n${contentStream}\nendstream`,
+    contentObjectNumber,
+    `<< /Length ${Buffer.byteLength(finalContentStream)} >>\nstream\n${finalContentStream}\nendstream`,
   );
 
   const xrefOffset = length;
@@ -376,6 +419,54 @@ function buildReportCardPdf(report: ReportCardView): Uint8Array {
 
   const trailer = `xref\n0 ${offsets.length}\n${xrefEntries}\ntrailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
   return new Uint8Array(Buffer.concat([...parts, Buffer.from(trailer)]));
+}
+
+async function buildPdfImageObject(
+  dataUrl: string | undefined,
+  name: string,
+  startObjectNumber: number,
+) {
+  if (!dataUrl?.startsWith("data:image/")) {
+    return null;
+  }
+
+  const base64 = dataUrl.split(",", 2)[1];
+  if (!base64) {
+    return null;
+  }
+
+  const source = Buffer.from(base64, "base64");
+  const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const pixelCount = info.width * info.height;
+  const rgb = Buffer.alloc(pixelCount * 3);
+  const alpha = Buffer.alloc(pixelCount);
+
+  for (let index = 0; index < pixelCount; index += 1) {
+    rgb[index * 3] = data[index * 4];
+    rgb[index * 3 + 1] = data[index * 4 + 1];
+    rgb[index * 3 + 2] = data[index * 4 + 2];
+    alpha[index] = data[index * 4 + 3];
+  }
+
+  const alphaObjectNumber = startObjectNumber + 1;
+  const imageBody =
+    `<< /Type /XObject /Subtype /Image /Width ${info.width} /Height ${info.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /Length ${deflateSync(rgb).length} /SMask ${alphaObjectNumber} 0 R >>\nstream\n` +
+    deflateSync(rgb).toString("binary") +
+    `\nendstream`;
+  const alphaBody =
+    `<< /Type /XObject /Subtype /Image /Width ${info.width} /Height ${info.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${deflateSync(alpha).length} >>\nstream\n` +
+    deflateSync(alpha).toString("binary") +
+    `\nendstream`;
+
+  return {
+    name,
+    imageRef: startObjectNumber,
+    nextObjectNumber: startObjectNumber + 2,
+    objects: [
+      { objectNumber: startObjectNumber, body: Buffer.from(imageBody, "binary") },
+      { objectNumber: alphaObjectNumber, body: Buffer.from(alphaBody, "binary") },
+    ],
+  };
 }
 
 function truncateText(value: string, length: number) {
