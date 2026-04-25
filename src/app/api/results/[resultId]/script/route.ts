@@ -7,12 +7,222 @@ import { Exam } from "@/models/Exam";
 import { Question } from "@/models/Question";
 import { User } from "@/models/User";
 
-function esc(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+type ScriptQuestion = {
+  questionNumber: number;
+  questionText: string;
+  answerType: "objective" | "theory";
+  options: string[];
+  correctAnswer?: number;
+  theoryKeywords: string[];
+  marks: number;
+  scoreAwarded: number;
+  selectedOption?: number;
+  answerText?: string;
+  matchedKeywords: string[];
+};
+
+function pdfEsc(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function wrapText(value: string, maxChars: number) {
+  const words = value.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  if (!words.length) return [""];
+
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines;
+}
+
+function buildScriptPdf(input: {
+  schoolName: string;
+  motto: string;
+  phone: string;
+  generatedLabel: string;
+  assessmentType: string;
+  assessmentTitle: string;
+  subject: string;
+  studentName: string;
+  dmsNumber: string;
+  className: string;
+  score: number;
+  totalMarks: number;
+  questions: ScriptQuestion[];
+}) {
+  const pageWidth = 842;
+  const pageHeight = 1191;
+  const margin = 40;
+  const header = Buffer.from("%PDF-1.4\n%\xFF\xFF\xFF\xFF\n", "binary");
+  const parts: Buffer[] = [header];
+  const offsets: number[] = [0];
+  let length = header.length;
+
+  const addObject = (objectNumber: number, body: Buffer | string) => {
+    const headerBuffer = Buffer.from(`${objectNumber} 0 obj\n`);
+    const bodyBuffer = typeof body === "string" ? Buffer.from(body, "binary") : body;
+    const footerBuffer = Buffer.from("\nendobj\n");
+    const objectBuffer = Buffer.concat([headerBuffer, bodyBuffer, footerBuffer]);
+    offsets[objectNumber] = length;
+    parts.push(objectBuffer);
+    length += objectBuffer.length;
+  };
+
+  const pages: string[] = [];
+  let currentY = 84;
+  let currentPage: string[] = [];
+
+  const top = (value: number) => pageHeight - value;
+  const text = (x: number, y: number, value: string, size: number, bold = false) =>
+    `BT /${bold ? "F2" : "F1"} ${size} Tf 1 0 0 1 ${x.toFixed(2)} ${top(y).toFixed(2)} Tm (${pdfEsc(value)}) Tj ET`;
+  const rectFill = (x: number, y: number, w: number, h: number, r: number, g: number, b: number) =>
+    `${r} ${g} ${b} rg ${x.toFixed(2)} ${top(y + h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`;
+  const rectStroke = (x: number, y: number, w: number, h: number) =>
+    `0.79 0.85 0.91 RG ${x.toFixed(2)} ${top(y + h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re S`;
+
+  function startPage() {
+    currentPage = [
+      rectFill(0, 0, pageWidth, pageHeight, 0.97, 0.98, 0.99),
+      rectFill(margin, 36, pageWidth - margin * 2, 108, 0.06, 0.09, 0.16),
+      text(margin + 16, 70, input.schoolName.toUpperCase(), 21, true),
+      text(margin + 16, 94, input.motto.toUpperCase(), 11, true),
+      text(margin + 16, 116, input.phone, 10, false),
+      text(margin + 16, 136, `${input.assessmentType.toUpperCase()} SCRIPT`, 14, true),
+      text(pageWidth - 238, 76, `Generated: ${input.generatedLabel}`, 10, true),
+      text(pageWidth - 238, 98, `Score: ${input.score} / ${input.totalMarks}`, 10, true),
+      rectFill(margin, 164, pageWidth - margin * 2, 84, 0.93, 0.99, 0.96),
+      rectStroke(margin, 164, pageWidth - margin * 2, 84),
+      text(margin + 16, 188, `Student: ${input.studentName}`, 12, true),
+      text(margin + 16, 210, `DMS Number: ${input.dmsNumber || "-"}`, 11),
+      text(margin + 300, 210, `Class: ${input.className || "-"}`, 11),
+      text(margin + 16, 232, `Assessment: ${input.assessmentTitle}`, 11),
+      text(margin + 300, 232, `Subject: ${input.subject}`, 11),
+    ];
+    currentY = 278;
+  }
+
+  function flushPage() {
+    pages.push(currentPage.join("\n"));
+  }
+
+  function ensureSpace(linesNeeded: number) {
+    if (currentY + linesNeeded * 16 <= pageHeight - 70) {
+      return;
+    }
+    flushPage();
+    startPage();
+  }
+
+  startPage();
+
+  for (const question of input.questions) {
+    const heading = `Question ${question.questionNumber}  (${question.scoreAwarded}/${question.marks})`;
+    const questionLines = wrapText(question.questionText || "Image-based question", 82);
+    const optionLines =
+      question.answerType === "objective"
+        ? question.options.flatMap((option, index) => {
+            const isCorrect = question.correctAnswer === index;
+            const isSelected = question.selectedOption === index;
+            const suffix = isCorrect
+              ? " - Correct answer"
+              : isSelected
+                ? " - Student answer"
+                : "";
+            return wrapText(`${String.fromCharCode(65 + index)}. ${option}${suffix}`, 84);
+          })
+        : [
+            ...wrapText(`Student Answer: ${question.answerText || "No answer submitted."}`, 84),
+            ...wrapText(
+              `Expected Keywords: ${question.theoryKeywords.join(", ") || "None"}`,
+              84,
+            ),
+            ...wrapText(
+              `Matched Keywords: ${question.matchedKeywords.join(", ") || "None"}`,
+              84,
+            ),
+          ];
+
+    ensureSpace(4 + questionLines.length + optionLines.length);
+
+    currentPage.push(rectStroke(margin, currentY - 14, pageWidth - margin * 2, 28 + (questionLines.length + optionLines.length) * 14));
+    currentPage.push(text(margin + 12, currentY, heading, 11, true));
+    currentY += 20;
+
+    for (const line of questionLines) {
+      currentPage.push(text(margin + 12, currentY, line, 10));
+      currentY += 14;
+    }
+
+    currentY += 6;
+    for (const line of optionLines) {
+      currentPage.push(text(margin + 20, currentY, line, 9));
+      currentY += 14;
+    }
+
+    currentY += 18;
+  }
+
+  flushPage();
+
+  addObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  addObject(2, `<< /Type /Pages /Kids [${pages.map((_, index) => `${3 + index} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+
+  let objectNumber = 3 + pages.length;
+  const contentObjectNumbers: number[] = [];
+
+  pages.forEach((pageContent, index) => {
+    const contentObjectNumber = objectNumber++;
+    contentObjectNumbers.push(contentObjectNumber);
+    addObject(
+      3 + index,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${objectNumber} 0 R /F2 ${objectNumber + 1} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`,
+    );
+  });
+
+  addObject(objectNumber, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  addObject(objectNumber + 1, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+
+  pages.forEach((pageContent, index) => {
+    addObject(
+      contentObjectNumbers[index],
+      `<< /Length ${Buffer.byteLength(pageContent)} >>\nstream\n${pageContent}\nendstream`,
+    );
+  });
+
+  const xrefOffset = length;
+  const xrefEntries = Array.from({ length: offsets.length }, (_, index) => offsets[index] ?? 0)
+    .map((offset, index) =>
+      index === 0
+        ? "0000000000 65535 f "
+        : `${String(offset).padStart(10, "0")} 00000 n `,
+    )
+    .join("\n");
+
+  const trailer = `xref\n0 ${offsets.length}\n${xrefEntries}\ntrailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Uint8Array(Buffer.concat([...parts, Buffer.from(trailer)]));
+}
+
+function binaryResponse(bytes: Uint8Array, filename: string) {
+  const body = Buffer.from(bytes);
+  return new NextResponse(body, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Length": String(body.byteLength),
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 export async function GET(
@@ -53,93 +263,41 @@ export async function GET(
     timeStyle: "short",
   }).format(new Date());
 
-  const html = `<!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <title>${esc(student?.fullName ?? "Student")} Script</title>
-      <style>
-        body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; margin:0; padding:24px; }
-        .sheet { max-width: 900px; margin: 0 auto; background:#fff; border:1px solid #cbd5e1; border-radius:24px; padding:32px; }
-        .header { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; border-bottom:1px solid #cbd5e1; padding-bottom:20px; }
-        .stamp { width:130px; height:130px; border-radius:999px; border:4px solid #166534; background:#f0fdf4; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:10px; color:#14532d; }
-        .title { font-size:30px; font-weight:700; margin:8px 0 0; }
-        .motto { font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#047857; font-weight:700; }
-        .meta { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; margin-top:20px; }
-        .meta div { border:1px solid #cbd5e1; border-radius:16px; padding:12px 14px; background:#f8fafc; }
-        .meta strong { display:block; font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.16em; margin-bottom:6px; }
-        .question { margin-top:18px; border:1px solid #cbd5e1; border-radius:20px; padding:18px; }
-        .question h3 { margin:0 0 8px; font-size:18px; }
-        .score { float:right; font-weight:700; background:#ecfdf5; color:#166534; padding:6px 10px; border-radius:999px; }
-        .option, .answer-box { margin-top:8px; border:1px solid #e2e8f0; border-radius:14px; padding:10px 12px; background:#fff; }
-        .correct { border-color:#86efac; background:#f0fdf4; color:#166534; }
-        .selected { border-color:#fca5a5; background:#fef2f2; color:#991b1b; }
-      </style>
-    </head>
-    <body>
-      <div class="sheet">
-        <div class="header">
-          <div>
-            <div class="motto">Education for Success and Peace</div>
-            <div class="title">Divine Mission School</div>
-            <div>08164039006, 08106565953</div>
-            <div style="margin-top:8px;font-weight:700;">${esc((exam?.assessmentType ?? "exam").toUpperCase())} SCRIPT</div>
-            <div style="margin-top:6px;color:#475569;">Generated ${esc(generatedLabel)}</div>
-          </div>
-          <div class="stamp">
-            <div style="font-weight:700; letter-spacing:0.18em;">OFFICIAL</div>
-            <div style="font-weight:700; letter-spacing:0.18em;">STAMP</div>
-            <div style="margin-top:8px; font-weight:700;">DMS</div>
-          </div>
-        </div>
-        <div class="meta">
-          <div><strong>Student</strong>${esc(student?.fullName ?? "Unknown student")}</div>
-          <div><strong>DMS Number</strong>${esc(student?.dmsNumber ?? "")}</div>
-          <div><strong>Class</strong>${esc(student?.className ?? "")}</div>
-          <div><strong>Assessment</strong>${esc(exam?.title ?? "Assessment")}</div>
-          <div><strong>Subject</strong>${esc(exam?.subject ?? "")}</div>
-          <div><strong>Score</strong>${result.score} / ${result.totalMarks}</div>
-        </div>
-        ${questions
-          .map((question) => {
-            const answer = answerMap.get(String(question._id));
-            return `
-              <article class="question">
-                <div class="score">${answer?.scoreAwarded ?? 0}/${question.marks}</div>
-                <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.16em;">Question ${question.questionNumber}</div>
-                <h3>${esc(question.questionText || "Image-based question")}</h3>
-                ${
-                  question.answerType === "objective"
-                    ? question.options
-                        .map((option, index) => {
-                          const isCorrect = question.correctAnswer === index;
-                          const isSelected = answer?.selectedOption === index;
-                          return `<div class="option ${isCorrect ? "correct" : isSelected ? "selected" : ""}">
-                            ${String.fromCharCode(65 + index)}. ${esc(option)}
-                            ${isCorrect ? " - Correct answer" : ""}
-                            ${isSelected && !isCorrect ? " - Student answer" : ""}
-                          </div>`;
-                        })
-                        .join("")
-                    : `
-                      <div class="answer-box"><strong>Student Answer</strong><div style="margin-top:6px;">${esc(answer?.answerText ?? "No answer submitted.")}</div></div>
-                      <div class="answer-box"><strong>Expected Keywords</strong><div style="margin-top:6px;">${esc((answer?.expectedKeywords ?? question.theoryKeywords ?? []).join(", ") || "None")}</div></div>
-                      <div class="answer-box"><strong>Matched Keywords</strong><div style="margin-top:6px;">${esc((answer?.matchedKeywords ?? []).join(", ") || "None")}</div></div>
-                    `
-                }
-              </article>
-            `;
-          })
-          .join("")}
-      </div>
-    </body>
-  </html>`;
-
-  return new NextResponse(html, {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `attachment; filename="script-${String(result._id)}.html"`,
-      "Cache-Control": "no-store",
-    },
+  const pdf = buildScriptPdf({
+    schoolName: "Divine Mission School",
+    motto: "Education for Success and Peace",
+    phone: "08164039006, 08106565953",
+    generatedLabel,
+    assessmentType: exam?.assessmentType ?? "exam",
+    assessmentTitle: exam?.title ?? "Assessment",
+    subject: exam?.subject ?? "",
+    studentName: student?.fullName ?? "Unknown student",
+    dmsNumber: student?.dmsNumber ?? "",
+    className: student?.className ?? "",
+    score: result.score,
+    totalMarks: result.totalMarks,
+    questions: questions.map((question) => {
+      const answer = answerMap.get(String(question._id));
+      return {
+        questionNumber: question.questionNumber,
+        questionText: question.questionText || "Image-based question",
+        answerType: question.answerType,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        theoryKeywords: answer?.expectedKeywords ?? question.theoryKeywords ?? [],
+        marks: question.marks,
+        scoreAwarded: answer?.scoreAwarded ?? 0,
+        selectedOption: answer?.selectedOption,
+        answerText: answer?.answerText ?? "",
+        matchedKeywords: answer?.matchedKeywords ?? [],
+      };
+    }),
   });
+
+  const safeName = `${student?.fullName ?? "student"}-${exam?.title ?? "script"}`
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
+  return binaryResponse(pdf, `${safeName}.pdf`);
 }
