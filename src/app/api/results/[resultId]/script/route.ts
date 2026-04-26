@@ -178,7 +178,9 @@ function buildScriptPdf(input: {
   addObject(1, "<< /Type /Catalog /Pages 2 0 R >>");
   addObject(2, `<< /Type /Pages /Kids [${pages.map((_, index) => `${3 + index} 0 R`).join(" ")}] /Count ${pages.length} >>`);
 
-  let objectNumber = 3 + pages.length;
+  const fontRegularObjectNumber = 3 + pages.length;
+  const fontBoldObjectNumber = fontRegularObjectNumber + 1;
+  let objectNumber = fontBoldObjectNumber + 1;
   const contentObjectNumbers: number[] = [];
 
   pages.forEach((pageContent, index) => {
@@ -186,12 +188,12 @@ function buildScriptPdf(input: {
     contentObjectNumbers.push(contentObjectNumber);
     addObject(
       3 + index,
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${objectNumber} 0 R /F2 ${objectNumber + 1} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontRegularObjectNumber} 0 R /F2 ${fontBoldObjectNumber} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`,
     );
   });
 
-  addObject(objectNumber, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-  addObject(objectNumber + 1, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+  addObject(fontRegularObjectNumber, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  addObject(fontBoldObjectNumber, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
 
   pages.forEach((pageContent, index) => {
     addObject(

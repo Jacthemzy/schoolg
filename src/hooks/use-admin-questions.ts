@@ -21,6 +21,8 @@ export type AdminQuestion = {
 
 const QUESTIONS_KEY = (examId: string) => ["admin-questions", examId];
 
+type QuestionMutationPayload = ReturnType<typeof mapQuestionPayload>;
+
 export function useAdminQuestions(examId: string) {
   return useQuery({
     queryKey: QUESTIONS_KEY(examId),
@@ -70,8 +72,6 @@ function mapQuestionPayload(payload: CreateQuestionInput) {
   };
 }
 
-type QuestionMutationPayload = ReturnType<typeof mapQuestionPayload>;
-
 export function useUpdateQuestion(examId: string) {
   const queryClient = useQueryClient();
 
@@ -107,6 +107,22 @@ export function useResetExamQuestions(examId: string) {
       apiDelete<{ success: boolean; deletedQuestions: number; deletedResults: number }>(
         `/api/exams/${examId}/questions`,
       ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUESTIONS_KEY(examId) });
+    },
+  });
+}
+
+export function useReuseExamQuestions(examId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { sourceExamId: string; replaceExisting?: boolean }) =>
+      apiPost<{ sourceExamId: string; replaceExisting?: boolean }, {
+        success: boolean;
+        importedCount: number;
+        clearedExisting: boolean;
+      }>(`/api/exams/${examId}/questions/reuse`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUESTIONS_KEY(examId) });
     },

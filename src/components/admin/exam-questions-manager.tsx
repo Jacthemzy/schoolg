@@ -12,12 +12,13 @@ import {
 } from "@/lib/admin-schemas";
 import {
   useAdminQuestions,
+  useReuseExamQuestions,
   useCreateQuestion,
   useDeleteQuestion,
   useResetExamQuestions,
   useUpdateQuestion,
 } from "@/hooks/use-admin-questions";
-import { useAdminExam, useUpdateExamStatus } from "@/hooks/use-admin-exams";
+import { useAdminExam, useAdminExams, useUpdateExamStatus } from "@/hooks/use-admin-exams";
 
 type ParsedQuestion = {
   questionType: "text" | "image";
@@ -34,17 +35,23 @@ type ParsedQuestion = {
 export function ExamQuestionsManager({ examId }: { examId: string }) {
   const queryClient = useQueryClient();
   const { data: exam } = useAdminExam(examId);
+  const { data: exams } = useAdminExams();
   const updateStatus = useUpdateExamStatus();
   const { data: questions, isLoading } = useAdminQuestions(examId);
   const createQuestion = useCreateQuestion(examId);
   const updateQuestion = useUpdateQuestion(examId);
   const deleteQuestion = useDeleteQuestion(examId);
   const resetExamQuestions = useResetExamQuestions(examId);
+  const reuseExamQuestions = useReuseExamQuestions(examId);
   const [bulkText, setBulkText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [reuseSourceExamId, setReuseSourceExamId] = useState("");
+  const [replaceExistingQuestions, setReplaceExistingQuestions] = useState(false);
+  const [reuseMessage, setReuseMessage] = useState<string | null>(null);
+  const [reuseError, setReuseError] = useState<string | null>(null);
 
   const form = useForm<CreateQuestionFormValues, undefined, CreateQuestionInput>({
     resolver: zodResolver(createQuestionSchema),
@@ -112,6 +119,16 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
   }
 
   const parsedQuestions = useMemo(() => parseBulkQuestions(bulkText), [bulkText]);
+  const reusableExams = useMemo(
+    () => (exams ?? []).filter((item) => item.id !== examId),
+    [examId, exams],
+  );
+  const matchingSubjectExams = useMemo(() => {
+    if (!exam?.subject) return [];
+    return reusableExams.filter(
+      (item) => item.subject.trim().toLowerCase() === exam.subject.trim().toLowerCase(),
+    );
+  }, [exam?.subject, reusableExams]);
 
   async function importQuestions() {
     if (!parsedQuestions.length) {
@@ -143,6 +160,40 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
     setImportSuccess(`${parsedQuestions.length} question(s) imported successfully.`);
     setImportError(null);
     await queryClient.invalidateQueries({ queryKey: ["admin-questions", examId] });
+  }
+
+  async function handleReuseQuestions() {
+    if (!reuseSourceExamId) {
+      setReuseError("Choose an exam to load questions from.");
+      setReuseMessage(null);
+      return;
+    }
+
+    if (replaceExistingQuestions) {
+      const confirmed = window.confirm(
+        "Replace current questions with the selected older exam? Existing questions and submitted results for this exam will be removed.",
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setReuseError(null);
+    setReuseMessage(null);
+
+    try {
+      const response = await reuseExamQuestions.mutateAsync({
+        sourceExamId: reuseSourceExamId,
+        replaceExisting: replaceExistingQuestions,
+      });
+
+      const sourceExam = reusableExams.find((item) => item.id === reuseSourceExamId);
+      setReuseMessage(
+        `${response.importedCount} question(s) loaded from ${sourceExam?.title ?? "the selected exam"}${response.clearedExisting ? " after clearing the current exam questions" : ""}.`,
+      );
+    } catch (error) {
+      setReuseError(error instanceof Error ? error.message : "Could not reuse questions.");
+    }
   }
 
   const answerType = form.watch("answerType");
@@ -354,7 +405,7 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
                   {...form.register("theoryKeywords")}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Separate keywords with commas or new lines. The auto-marker matches these words in the student's answer.
+                  Separate keywords with commas or new lines. The auto-marker matches these words in the student&apos;s answer.
                 </p>
                 <FieldError message={form.formState.errors.theoryKeywords?.message} />
               </div>
@@ -393,6 +444,77 @@ export function ExamQuestionsManager({ examId }: { examId: string }) {
                 : "Add Question"}
           </button>
         </form>
+      </section>
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">Reuse Previous Questions</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Load questions from any older exam into this one, even if the class is different.
+        </p>
+        <div className="mt-4 grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div>
+              <label className="text-xs font-medium">Choose older exam</label>
+              <select
+                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={reuseSourceExamId}
+                onChange={(event) => {
+                  setReuseSourceExamId(event.target.value);
+                  setReuseError(null);
+                  setReuseMessage(null);
+                }}
+              >
+                <option value="">Select an exam</option>
+                {matchingSubjectExams.length ? (
+                  <optgroup label="Same subject">
+                    {matchingSubjectExams.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title} - {item.subject} - {item.classTarget}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                {reusableExams.filter((item) => !matchingSubjectExams.some((match) => match.id === item.id)).length ? (
+                  <optgroup label="Other exams">
+                    {reusableExams
+                      .filter((item) => !matchingSubjectExams.some((match) => match.id === item.id))
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title} - {item.subject} - {item.classTarget}
+                        </option>
+                      ))}
+                  </optgroup>
+                ) : null}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={handleReuseQuestions}
+              disabled={reuseExamQuestions.isPending || !reuseSourceExamId}
+              className="self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {reuseExamQuestions.isPending ? "Loading..." : "Load Questions"}
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={replaceExistingQuestions}
+              onChange={(event) => setReplaceExistingQuestions(event.target.checked)}
+            />
+            Replace current questions first
+          </label>
+
+          {matchingSubjectExams.length ? (
+            <p className="text-xs text-muted-foreground">
+              Same-subject exams are shown first so you can quickly reload Mathematics or any other subject for another class.
+            </p>
+          ) : null}
+
+          {reuseError ? <p className="text-sm text-destructive">{reuseError}</p> : null}
+          {reuseMessage ? <p className="text-sm text-emerald-700">{reuseMessage}</p> : null}
+        </div>
       </section>
 
       <section className="rounded-xl border bg-card p-6 shadow-sm">
